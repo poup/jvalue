@@ -20,6 +20,7 @@ namespace Halak
         public bool IsNegative => source != null && source[startIndex] == '-';
         public JValue IntegerPart => new JValue(source, startIndex, toDecimalPoint);
         public JValue FractionalPart => HasFractionalPart ? new JValue(source, FractionalPartIndex, FractionalPartLength) : JValue.Null;
+
         public JValue Exponent
         {
             get
@@ -32,8 +33,7 @@ namespace Halak
 
                     return new JValue(source, exponentIndex, (startIndex + length) - exponentIndex);
                 }
-                else
-                    return JValue.Null;
+                return JValue.Null;
             }
         }
 
@@ -42,13 +42,34 @@ namespace Halak
         private int FractionalPartIndex => startIndex + toDecimalPoint + 1;
         private int FractionalPartLength => toExponent - toDecimalPoint - 1;
 
-        public JNumber(int value) : this(value.ToString(NumberFormatInfo.InvariantInfo), true) { }
-        public JNumber(long value) : this(value.ToString(NumberFormatInfo.InvariantInfo), true) { }
-        public JNumber(float value) : this(value.ToString(NumberFormatInfo.InvariantInfo)) { }
-        public JNumber(double value) : this(value.ToString(NumberFormatInfo.InvariantInfo)) { }
-        public JNumber(decimal value) : this(value.ToString(NumberFormatInfo.InvariantInfo)) { }
-        private JNumber(string source) : this(source, 0, source.Length, FindDecimalPoint(source), FindExponent(source)) { }
-        private JNumber(string source, bool _ /* from integer */) : this(source, 0, source.Length, source.Length, source.Length) { }
+        public JNumber(int value) : this(value.ToString(NumberFormatInfo.InvariantInfo), true)
+        {
+        }
+
+        public JNumber(long value) : this(value.ToString(NumberFormatInfo.InvariantInfo), true)
+        {
+        }
+
+        public JNumber(float value) : this(value.ToString(NumberFormatInfo.InvariantInfo))
+        {
+        }
+
+        public JNumber(double value) : this(value.ToString(NumberFormatInfo.InvariantInfo))
+        {
+        }
+
+        public JNumber(decimal value) : this(value.ToString(NumberFormatInfo.InvariantInfo))
+        {
+        }
+
+        private JNumber(string source) : this(source, 0, source.Length, FindDecimalPoint(source), FindExponent(source))
+        {
+        }
+
+        private JNumber(string source, bool _ /* from integer */) : this(source, 0, source.Length, source.Length, source.Length)
+        {
+        }
+
         private JNumber(string source, int startIndex, int length, int toDecimalPoint, int toExponent)
         {
             this.source = source;
@@ -60,28 +81,38 @@ namespace Halak
 
         public int ToInt32(int defaultValue = default(int))
             => ParseInt32(source, startIndex, length, defaultValue);
+
         public int? ToNullableInt32()
             => ParseNullableInt32(source, startIndex, length);
+
         public long ToInt64(long defaultValue = default(long))
             => ParseInt64(source, startIndex, length, defaultValue);
+
         public long? ToNullableInt64()
             => ParseNullableInt64(source, startIndex, length);
+
         public float ToSingle(float defaultValue = default(float))
             => ParseSingle(source, startIndex, length, defaultValue);
+
         public float? ToNullableSingle()
             => ParseNullableSingle(source, startIndex, length);
+
         public double ToDouble(double defaultValue = default(double))
             => ParseDouble(source, startIndex, length, defaultValue);
+
         public double? ToNullableDouble()
             => ParseNullableDouble(source, startIndex, length);
+
         public decimal ToDecimal(decimal defaultValue = default(decimal))
             => ParseDecimal(source, startIndex, length, defaultValue);
+
         public decimal? ToNullableDecimal()
             => ParseNullableDecimal(source, startIndex, length);
 
         public bool Equals(JNumber other) => Equals(this, other);
         public int CompareTo(JNumber other) => Compare(this, other);
         public override bool Equals(object obj) => obj is JNumber other && Equals(this, other);
+
         public override int GetHashCode()
         {
             if (source == null)
@@ -109,7 +140,9 @@ namespace Halak
             var decimalPoint = -1;
             var exponentIndex = -1;
             if (c == '-' || IsDigit(c))
-            { /* DO NOTHING */ }
+            {
+                /* DO NOTHING */
+            }
             else if (c == '0' && (i < s.Length && s[i++] == '.'))
             {
                 decimalPoint = i - 1;
@@ -123,20 +156,21 @@ namespace Halak
                 c = s[i];
                 if (IsDigit(c))
                     continue;
-                else if (c == '.')
+
+                if (c == '.')
                 {
                     decimalPoint = i++;
                     goto FractionalPart;
                 }
-                else if (c == 'e' || c == 'E')
+                if (c == 'e' || c == 'E')
                 {
                     exponentIndex = i++;
                     goto ExponentPart;
                 }
-                else if (IsTerminal(c))
+                if (IsTerminal(c))
                     goto Exit;
-                else
-                    return false;
+
+                return false;
             }
 
             goto Exit;
@@ -147,13 +181,13 @@ namespace Halak
                 c = s[i];
                 if (IsDigit(c))
                     continue;
-                else if (c == 'e' || c == 'E')
+
+                if (c == 'e' || c == 'E')
                 {
                     exponentIndex = i++;
                     goto ExponentPart;
                 }
-                else
-                    return false;
+                return false;
             }
 
             goto Exit;
@@ -191,8 +225,8 @@ namespace Halak
             var compareResult = left.length.CompareTo(right.length);
             if (compareResult != 0)
                 return compareResult;
-            else
-                return string.CompareOrdinal(left.source, left.startIndex, right.source, right.startIndex, left.length);
+
+            return string.CompareOrdinal(left.source, left.startIndex, right.source, right.startIndex, left.length);
         }
 
         private static int GetHashCode(char c)
@@ -214,7 +248,7 @@ namespace Halak
                 case '-': return unchecked((int)0x9F91692A);
                 case 'e': return unchecked((int)0xC0DFD050);
                 case 'E': return unchecked((int)0xC0DFD050);
-                default: return 0;
+                default:  return 0;
             }
         }
 
@@ -244,8 +278,8 @@ namespace Halak
             return s.Length;
         }
 
-        public static bool operator ==(JNumber left, JNumber right) => Equals(left, right);
-        public static bool operator !=(JNumber left, JNumber right) => Equals(left, right) == false;
+        public static bool operator==(JNumber left, JNumber right) => Equals(left, right);
+        public static bool operator!=(JNumber left, JNumber right) => Equals(left, right) == false;
 
         public static implicit operator JNumber(byte value) => new JNumber(value);
         public static implicit operator JNumber(short value) => new JNumber(value);

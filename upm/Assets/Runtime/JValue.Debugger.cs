@@ -13,13 +13,13 @@ namespace Halak
         {
             switch (Type)
             {
-                case TypeCode.Null: return "JValue.Null";
+                case TypeCode.Null:    return "JValue.Null";
                 case TypeCode.Boolean: return "JValue.Boolean";
-                case TypeCode.Number: return "JValue.Number";
-                case TypeCode.String: return "JValue.String";
-                case TypeCode.Array: return "JValue.Array";
-                case TypeCode.Object: return "JValue.Object";
-                default: return "JValue.Null";
+                case TypeCode.Number:  return "JValue.Number";
+                case TypeCode.String:  return "JValue.String";
+                case TypeCode.Array:   return "JValue.Array";
+                case TypeCode.Object:  return "JValue.Object";
+                default:               return "JValue.Null";
             }
         }
 
@@ -34,8 +34,8 @@ namespace Halak
                         serialized = serialized.Substring(0, EllipsisCount - 3) + "...";
                     var elementCount = GetElementCount();
                     return string.Format("{0} ({1} {2})", serialized, elementCount.ToString(), elementCount != 1 ? "items" : "item");
-                default:
-                    return ToString();
+
+                default: return ToString();
             }
         }
 
@@ -99,12 +99,10 @@ namespace Halak
                         case TypeCode.Number:
                         case TypeCode.String:
                             return null;
-                        case TypeCode.Array:
-                            return value.Array().Select(it => new ArrayElement(it)).ToArray();
-                        case TypeCode.Object:
-                            return value.Object().Select(it => new ObjectMember(it.Key.ToString(), it.Value)).ToArray();
-                        default:
-                            return null;
+
+                        case TypeCode.Array:  return value.Array().Select(it => new ArrayElement(it)).ToArray();
+                        case TypeCode.Object: return value.Object().Select(it => new ObjectMember(it.Key.ToString(), it.Value)).ToArray();
+                        default:              return null;
                     }
                 }
             }

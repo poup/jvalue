@@ -43,6 +43,7 @@ namespace Halak
         }
 
         internal static OptimizedEnumerator<T> ToEfficient<T>(this IEnumerable<T> source) => OptimizedEnumerator<T>.From(source);
+
         internal struct OptimizedEnumerator<T> : IEnumerator<T>
         {
             private readonly IEnumerator<T> enumerator;
@@ -56,10 +57,10 @@ namespace Halak
                 {
                     if (array != null)
                         return array[index];
-                    else if (list != null)
+                    if (list != null)
                         return list[index];
-                    else
-                        return enumerator.Current;
+
+                    return enumerator.Current;
                 }
             }
 
@@ -79,10 +80,10 @@ namespace Halak
 
                 if (array != null)
                     return index < array.Length;
-                else if (list != null)
+                if (list != null)
                     return index < list.Count;
-                else
-                    return enumerator.MoveNext();
+
+                return enumerator.MoveNext();
             }
 
             public void Reset()
@@ -102,10 +103,10 @@ namespace Halak
             {
                 if (source is T[] array)
                     return new OptimizedEnumerator<T>(null, array, array);
-                else if (source is IReadOnlyList<T> list)
+                if (source is IReadOnlyList<T> list)
                     return new OptimizedEnumerator<T>(null, list, null);
-                else
-                    return new OptimizedEnumerator<T>(source.GetEnumerator(), null, null);
+
+                return new OptimizedEnumerator<T>(source.GetEnumerator(), null, null);
             }
         }
     }

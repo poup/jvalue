@@ -8,12 +8,10 @@ namespace Halak
     {
         private const int BigExponent = 1000;
         private const NumberStyles StandardNumberStyles = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent;
-        private static readonly uint[] UInt32Powers10 = new[]
-        {
+        private static readonly uint[] UInt32Powers10 = {
             1U, 10U, 100U, 1000U, 10000U, 100000U, 1000000U, 10000000U, 100000000U, 1000000000U,
         };
-        private static readonly ulong[] UInt64Powers10 = new[]
-        {
+        private static readonly ulong[] UInt64Powers10 = {
             1UL,
             10UL,
             100UL,
@@ -35,8 +33,7 @@ namespace Halak
             1000000000000000000UL,
             10000000000000000000UL,
         };
-        private static readonly double[] DoublePowers10 = new[]
-        {
+        private static readonly double[] DoublePowers10 = {
             1E+0, 1E+1, 1E+2, 1E+3, 1E+4, 1E+5, 1E+6, 1E+7, 1E+8, 1E+9, 1E+10, 1E+11, 1E+12, 1E+13, 1E+14, 1E+15, 1E+16, 1E+17, 1E+18, 1E+19, 1E+20, 1E+21, 1E+22, 1E+23
         };
 
@@ -107,8 +104,8 @@ namespace Halak
                 s = s.Substring(startIndex, length);
             if (decimal.TryParse(s, StandardNumberStyles, NumberFormatInfo.InvariantInfo, out var value))
                 return value;
-            else
-                return defaultValue;
+
+            return defaultValue;
         }
 
         public static decimal? ParseNullableDecimal(string s, int startIndex, int length)
@@ -117,8 +114,8 @@ namespace Halak
                 s = s.Substring(startIndex, length);
             if (decimal.TryParse(s, StandardNumberStyles, NumberFormatInfo.InvariantInfo, out var value))
                 return value;
-            else
-                return null;
+
+            return null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -143,6 +140,7 @@ namespace Halak
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool IsDigit(char c) => '0' <= c && c <= '9';
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool IsTerminal(char c)
         {
@@ -158,8 +156,8 @@ namespace Halak
                 case '\t':
                 case '"':
                     return true;
-                default:
-                    return false;
+
+                default: return false;
             }
         }
 

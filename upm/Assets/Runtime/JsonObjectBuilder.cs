@@ -10,9 +10,18 @@ namespace Halak
         private readonly JsonWriter writer;
         private readonly int startOffset;
 
-        public JsonObjectBuilder(int capacity) : this(new JsonWriter(capacity)) { }
-        public JsonObjectBuilder(StringBuilder stringBuilder) : this(new JsonWriter(stringBuilder)) { }
-        public JsonObjectBuilder(TextWriter writer) : this(new JsonWriter(writer)) { }
+        public JsonObjectBuilder(int capacity) : this(new JsonWriter(capacity))
+        {
+        }
+
+        public JsonObjectBuilder(StringBuilder stringBuilder) : this(new JsonWriter(stringBuilder))
+        {
+        }
+
+        public JsonObjectBuilder(TextWriter writer) : this(new JsonWriter(writer))
+        {
+        }
+
         internal JsonObjectBuilder(JsonWriter writer)
         {
             this.writer = writer;
@@ -162,7 +171,9 @@ namespace Halak
                 throw new InvalidOperationException("this object created by default constructor. please use parameterized constructor.");
         }
 
+
         #region Shorthand Methods
+
         public JsonObjectBuilder PutArray(string key, IEnumerable<string> values)
             => PutArrayOf(key, values, (arrayBuilder, value) => arrayBuilder.Push(value));
 
@@ -186,6 +197,7 @@ namespace Halak
 
         public JsonObjectBuilder PutObjectOf<T>(string key, IEnumerable<KeyValuePair<string, T>> source, Func<JsonObjectBuilder, KeyValuePair<string, T>, JsonObjectBuilder> build)
             => PutObject(key, (source, build), Internal.ObjectOf);
+
         #endregion
     }
 }
