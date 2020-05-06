@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Halak
 {
-    partial struct JNumber
+    readonly partial struct JNumber
     {
         private const int BigExponent = 1000;
         private const NumberStyles StandardNumberStyles = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent;
@@ -41,9 +41,13 @@ namespace Halak
         {
             for (; index < end; index++)
             {
-                var c = s[index];
-                if (c == '.' || c == 'e' || c == 'E')
-                    return index;
+                switch (s[index])
+                {
+                    case '.':
+                    case 'e':
+                    case 'E':
+                        return index;
+                }
             }
 
             return end;
@@ -53,9 +57,12 @@ namespace Halak
         {
             for (; index < end; index++)
             {
-                var c = s[index];
-                if (c == 'e' || c == 'E')
-                    return index;
+                switch (s[index])
+                {
+                    case 'e':
+                    case 'E':
+                        return index;
+                }
             }
 
             return end;

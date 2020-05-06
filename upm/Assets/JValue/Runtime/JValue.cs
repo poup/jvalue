@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Halak
@@ -13,7 +11,7 @@ namespace Halak
     /// </summary>
     /// <seealso cref="http://www.json.org/"/>
     /// <seealso cref="https://github.com/halak/jvalue/"/>
-    public partial struct JValue : IComparable<JValue>, IEquatable<JValue>
+    public readonly partial struct JValue : IComparable<JValue>, IEquatable<JValue>
     {
         #region TypeCode
 
@@ -32,6 +30,8 @@ namespace Halak
 
         #region Static Fields
 
+        private const string indent = "  ";
+
         internal const string NullLiteral = "null";
         internal const string TrueLiteral = "true";
         internal const string FalseLiteral = "false";
@@ -48,14 +48,16 @@ namespace Halak
 
         #region Fields
 
-        private readonly string source;
-        private readonly int startIndex;
-        private readonly int length;
+        public readonly string source;
+        public readonly int startIndex;
+        public readonly int length;
 
         #endregion
 
 
         #region Properties
+
+        public int endIndex => startIndex + length - 1;
 
         public TypeCode Type
         {
@@ -86,7 +88,6 @@ namespace Halak
 
         #region Indexer
 
-        public JValue this[int index] => Get(index);
         public JValue this[string key] => Get(key);
 
         #endregion
@@ -125,11 +126,11 @@ namespace Halak
         {
         }
 
-        public JValue(double value) : this(value.ToString(NumberFormatInfo.InvariantInfo), false)
+        public JValue(double value) : this(value.ToString(NumberFormatInfo.InvariantInfo))
         {
         }
 
-        public JValue(decimal value) : this(value.ToString(NumberFormatInfo.InvariantInfo), false)
+        public JValue(decimal value) : this(value.ToString(NumberFormatInfo.InvariantInfo))
         {
         }
 
@@ -321,7 +322,9 @@ namespace Halak
             var sb = new StringBuilder(length);
             var enumerator = GetCharEnumerator();
             while (enumerator.MoveNext())
+            {
                 sb.Append(enumerator.Current);
+            }
             return sb.ToString();
         }
 
@@ -337,42 +340,10 @@ namespace Halak
             return new JValue(source, startIndex + 1, length - 2);
         }
 
-        public List<JValue> ToArray()
-        {
-            var result = new List<JValue>();
-            foreach (var item in Array())
-                result.Add(item);
-
-            return result;
-        }
-
-        public Dictionary<JValue, JValue> ToObject()
-        {
-            var result = new Dictionary<JValue, JValue>();
-            foreach (var item in Object())
-                result[item.Key] = item.Value;
-
-            return result;
-        }
-
         #endregion
 
 
         #region Get
-
-        private JValue Get(int index)
-        {
-            if (Type == TypeCode.Array)
-            {
-                foreach (var item in Array())
-                {
-                    if (index-- == 0)
-                        return item;
-                }
-            }
-
-            return Null;
-        }
 
         private JValue Get(string key)
         {
@@ -467,61 +438,9 @@ namespace Halak
 
         #region Enumeration
 
-        public IEnumerable<JValue> Array()
-        {
-            if (Type == TypeCode.Array)
-            {
-                var end = startIndex + length - 1;
+        public ArrayEnumerator GetArrayItems() => new ArrayEnumerator(this);
 
-                var vStart = SkipWhitespaces(startIndex + 1);
-                while (vStart < end)
-                {
-                    var vEnd = SkipValue(vStart);
-                    yield return new JValue(source, vStart, vEnd - vStart);
-
-                    vStart = SkipWhitespaces(vEnd + 1);
-                }
-            }
-        }
-
-        public IEnumerable<KeyValuePair<int, JValue>> IndexedArray()
-        {
-            if (Type == TypeCode.Array)
-            {
-                var end = startIndex + length - 1;
-
-                var index = 0;
-                var vStart = SkipWhitespaces(startIndex + 1);
-                while (vStart < end)
-                {
-                    var vEnd = SkipValue(vStart);
-                    yield return new KeyValuePair<int, JValue>(index++, new JValue(source, vStart, vEnd - vStart));
-
-                    vStart = SkipWhitespaces(vEnd + 1);
-                }
-            }
-        }
-
-        public IEnumerable<KeyValuePair<JValue, JValue>> Object()
-        {
-            if (Type == TypeCode.Object)
-            {
-                var end = startIndex + length - 1;
-
-                var kStart = SkipWhitespaces(startIndex + 1);
-                while (kStart < end)
-                {
-                    var kEnd = SkipString(kStart);
-                    var vStart = SkipWhitespaces(kEnd + 1);
-                    var vEnd = SkipValue(vStart);
-
-                    yield return new KeyValuePair<JValue, JValue>(new JValue(source, kStart, kEnd - kStart),
-                        new JValue(source, vStart, vEnd - vStart));
-
-                    kStart = SkipWhitespaces(vEnd + 1);
-                }
-            }
-        }
+        public ObjectKeyValueEnumerator GetObjectKeyValues() => new ObjectKeyValueEnumerator(this);
 
         public CharEnumerator GetCharEnumerator() => new CharEnumerator(this);
 
@@ -710,11 +629,11 @@ namespace Halak
             switch (value.Type)
             {
                 case TypeCode.Array:
-                    Serialize(writer, value.Array(), indent, depth, indent > 0 && value.length > 80);
+                    Serialize(writer, value.GetArrayItems(), indent, depth, indent > 0 && value.length > 80);
                     break;
 
                 case TypeCode.Object:
-                    Serialize(writer, value.Object(), indent, depth, indent > 0 && value.length > 80);
+                    Serialize(writer, value.GetObjectKeyValues(), indent, depth, indent > 0 && value.length > 80);
                     break;
 
                 default:
@@ -723,7 +642,7 @@ namespace Halak
             }
         }
 
-        private static void Serialize(TextWriter writer, IEnumerable<JValue> value, int indent, int depth, bool multiline)
+        private static void Serialize(TextWriter writer, ArrayEnumerator value, int indent, int depth, bool multiline)
         {
             writer.Write('[');
 
@@ -733,7 +652,7 @@ namespace Halak
             var isFirst = true;
             foreach (var item in value)
             {
-                if (isFirst == false)
+                if (!isFirst)
                 {
                     writer.Write(',');
 
@@ -746,7 +665,9 @@ namespace Halak
                     }
                 }
                 else
+                {
                     isFirst = false;
+                }
 
                 if (indent > 0 && multiline)
                     Indent(writer, indent, depth + 1);
@@ -763,7 +684,7 @@ namespace Halak
             writer.Write(']');
         }
 
-        private static void Serialize(TextWriter writer, IEnumerable<KeyValuePair<JValue, JValue>> value, int indent, int depth, bool multiline)
+        private static void Serialize(TextWriter writer, ObjectKeyValueEnumerator value, int indent, int depth, bool multiline)
         {
             writer.Write('{');
 
@@ -851,7 +772,7 @@ namespace Halak
         private int GetArrayHashCode()
         {
             var hashCode = 0x12D398BA;
-            foreach (var element in Array())
+            foreach (var element in GetArrayItems())
                 hashCode = HashCode.Combine(hashCode, element.GetHashCode());
             return hashCode;
         }
@@ -859,7 +780,7 @@ namespace Halak
         private int GetObjectHashCode()
         {
             var hashCode = 0x50638734;
-            foreach (var member in Object())
+            foreach (var member in GetObjectKeyValues())
             {
                 hashCode = HashCode.Combine(hashCode, member.Key.GetHashCode());
                 hashCode = HashCode.Combine(hashCode, member.Value.GetHashCode());
@@ -882,8 +803,8 @@ namespace Halak
                     case TypeCode.Boolean: return left.ToBooleanCore() == right.ToBooleanCore();
                     case TypeCode.Number:  return JNumber.Equals(left.ToNumberCore(JNumber.NaN), right.ToNumberCore(JNumber.NaN));
                     case TypeCode.String:  return EqualsString(left, right);
-                    case TypeCode.Array:   return SequenceEqual(left.Array().GetEnumerator(), right.Array().GetEnumerator(), Equals);
-                    case TypeCode.Object:  return SequenceEqual(left.Object().GetEnumerator(), right.Object().GetEnumerator(), EqualsMember);
+                    case TypeCode.Array:   return SequenceEqual<JValue, ArrayEnumerator>(left.GetArrayItems(), right.GetArrayItems(), Equals);
+                    case TypeCode.Object:  return SequenceEqual<KeyValuePair<JValue, JValue>, ObjectKeyValueEnumerator>(left.GetObjectKeyValues(), right.GetObjectKeyValues(), EqualsMember);
                 }
             }
 
@@ -902,8 +823,8 @@ namespace Halak
                     case TypeCode.Boolean: return left.ToBooleanCore().CompareTo(right.ToBooleanCore());
                     case TypeCode.Number:  return JNumber.Compare(left.ToNumberCore(JNumber.NaN), right.ToNumberCore(JNumber.NaN));
                     case TypeCode.String:  return SequenceCompare<char, CharEnumerator>(left.GetCharEnumerator(), right.GetCharEnumerator(), (x, y) => x.CompareTo(y));
-                    case TypeCode.Array:   return SequenceCompare(left.Array().GetEnumerator(), right.Array().GetEnumerator(), Compare);
-                    case TypeCode.Object:  return SequenceCompare(left.Object().GetEnumerator(), right.Object().GetEnumerator(), CompareMember);
+                    case TypeCode.Array:   return SequenceCompare(left.GetArrayItems(), right.GetArrayItems(), Compare);
+                    case TypeCode.Object:  return SequenceCompare(left.GetObjectKeyValues().GetEnumerator(), right.GetObjectKeyValues(), CompareMember);
                     default:               return 0;
                 }
             }
@@ -919,8 +840,7 @@ namespace Halak
             return Compare(x.Value, y.Value);
         }
 
-        private static int SequenceCompare<T>(IEnumerator<T> a, IEnumerator<T> b, Func<T, T, int> compare)
-            => SequenceCompare<T, IEnumerator<T>>(a, b, compare);
+        private static int SequenceCompare<T>(IEnumerator<T> a, IEnumerator<T> b, Func<T, T, int> compare) => SequenceCompare<T, IEnumerator<T>>(a, b, compare);
 
         private static int SequenceCompare<T, TEnumerator>(TEnumerator a, TEnumerator b, Func<T, T, int> compare) where TEnumerator : IEnumerator<T>
         {
@@ -939,14 +859,9 @@ namespace Halak
             }
         }
 
-        private static bool EqualsString(JValue a, JValue b)
-            => SequenceEqual<char, CharEnumerator>(a.GetCharEnumerator(), b.GetCharEnumerator(), (x, y) => x == y);
+        private static bool EqualsString(JValue a, JValue b) => SequenceEqual<char, CharEnumerator>(a.GetCharEnumerator(), b.GetCharEnumerator(), (x, y) => x == y);
 
-        private static bool EqualsMember(KeyValuePair<JValue, JValue> x, KeyValuePair<JValue, JValue> y)
-            => Equals(x.Key, y.Key) && Equals(x.Value, y.Value);
-
-        private static bool SequenceEqual<T>(IEnumerator<T> a, IEnumerator<T> b, Func<T, T, bool> equals)
-            => SequenceEqual<T, IEnumerator<T>>(a, b, equals);
+        private static bool EqualsMember(KeyValuePair<JValue, JValue> x, KeyValuePair<JValue, JValue> y) => Equals(x.Key, y.Key) && Equals(x.Value, y.Value);
 
         private static bool SequenceEqual<T, TEnumerator>(TEnumerator a, TEnumerator b, Func<T, T, bool> equals) where TEnumerator : IEnumerator<T>
         {
@@ -990,119 +905,12 @@ namespace Halak
         #region Operators
 
         public static bool operator==(JValue left, JValue right) => left.Equals(right);
-        public static bool operator!=(JValue left, JValue right) => left.Equals(right) == false;
+        public static bool operator!=(JValue left, JValue right) => !left.Equals(right);
         public static bool operator<(JValue left, JValue right) => left.CompareTo(right) < 0;
         public static bool operator<=(JValue left, JValue right) => left.CompareTo(right) <= 0;
         public static bool operator>(JValue left, JValue right) => left.CompareTo(right) > 0;
         public static bool operator>=(JValue left, JValue right) => left.CompareTo(right) >= 0;
 
         #endregion
-
-
-        public struct CharEnumerator : IEnumerator<char>
-        {
-            private readonly string source;
-            private readonly int startIndex;
-            private char current;
-            private int index;
-
-            public char Current => current;
-            object IEnumerator.Current => Current;
-
-            internal CharEnumerator(JValue value) : this(value.source, value.startIndex)
-            {
-            }
-
-            internal CharEnumerator(string source, int startIndex)
-            {
-                this.source = source;
-                this.startIndex = startIndex;
-                this.current = '\0';
-                this.index = startIndex;
-            }
-
-            public bool MoveNext()
-            {
-                if (0 <= index && index < source.Length - 1)
-                {
-                    current = source[++index];
-
-                    if (current != '\\')
-                    {
-                        if (current != '"')
-                            return true;
-
-                        index = -1;
-                        return false;
-                    }
-                    index++;
-
-                    switch (source[index])
-                    {
-                        case '"':
-                            current = '"';
-                            break;
-
-                        case '/':
-                            current = '/';
-                            break;
-
-                        case '\\':
-                            current = '\\';
-                            break;
-
-                        case 'n':
-                            current = '\n';
-                            break;
-
-                        case 't':
-                            current = '\t';
-                            break;
-
-                        case 'r':
-                            current = '\r';
-                            break;
-
-                        case 'b':
-                            current = '\b';
-                            break;
-
-                        case 'f':
-                            current = '\f';
-                            break;
-
-                        case 'u':
-                            var a = source[++index];
-                            var b = source[++index];
-                            var c = source[++index];
-                            var d = source[++index];
-                            current = (char)((Hex(a) << 12) | (Hex(b) << 8) | (Hex(c) << 4) | (Hex(d)));
-                            break;
-                    }
-
-                    return true;
-                }
-                return false;
-            }
-
-            public void Reset()
-            {
-                current = '\0';
-                index = startIndex;
-            }
-
-            public void Dispose()
-            {
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static int Hex(char c)
-            {
-                return
-                    ('0' <= c && c <= '9') ? c - '0' :
-                    ('a' <= c && c <= 'f') ? c - 'a' + 10 :
-                    c - 'A' + 10;
-            }
-        }
     }
 }

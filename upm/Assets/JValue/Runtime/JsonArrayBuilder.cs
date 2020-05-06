@@ -1,10 +1,12 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace Halak
 {
+    [PublicAPI]
     public struct JsonArrayBuilder : IDisposable
     {
         private readonly JsonWriter writer;

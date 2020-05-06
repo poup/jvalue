@@ -1,8 +1,8 @@
-﻿#if (!NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP2_2 && !NETCOREAPP3_0)
+﻿using System.Runtime.CompilerServices;
+
+#if (!NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP2_2 && !NETCOREAPP3_0)
 namespace System
 {
-    using System.Runtime.CompilerServices;
-
     internal struct HashCode
     {
         public static int Combine<T1>(T1 value1)

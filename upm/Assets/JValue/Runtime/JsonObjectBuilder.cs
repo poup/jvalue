@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Halak
 {
-    public struct JsonObjectBuilder : IDisposable
+    public readonly struct JsonObjectBuilder : IDisposable
     {
         private readonly JsonWriter writer;
         private readonly int startOffset;

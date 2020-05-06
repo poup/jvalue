@@ -1,9 +1,11 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Globalization;
 
 namespace Halak
 {
-    public partial struct JNumber : IEquatable<JNumber>, IComparable<JNumber>
+    [PublicAPI]
+    public readonly partial struct JNumber : IEquatable<JNumber>, IComparable<JNumber>
     {
         public static readonly JNumber NaN = new JNumber(string.Empty, 0, 0, 0, 0);
         public static readonly JNumber Zero = new JNumber(0);
