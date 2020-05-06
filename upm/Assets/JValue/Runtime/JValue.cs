@@ -611,17 +611,17 @@ namespace Halak
             {
                 var end = startIndex + length;
                 for (var i = startIndex; i < end; i++)
-                    writer.Write(source[i]);
+                    writer.WriteValue(source[i]);
             }
             else
-                writer.Write(NullLiteral);
+                writer.WriteValue(NullLiteral);
         }
 
         private static void Indent(TextWriter writer, int indent, int depth)
         {
             var spaces = indent * depth;
             for (var i = 0; i < spaces; i++)
-                writer.Write(' ');
+                writer.WriteValue(' ');
         }
 
         private static void Serialize(TextWriter writer, JValue value, int indent, int depth)
@@ -644,7 +644,7 @@ namespace Halak
 
         private static void Serialize(TextWriter writer, ArrayEnumerator value, int indent, int depth, bool multiline)
         {
-            writer.Write('[');
+            writer.WriteValue('[');
 
             if (indent > 0 && multiline)
                 writer.WriteLine();
@@ -654,14 +654,14 @@ namespace Halak
             {
                 if (!isFirst)
                 {
-                    writer.Write(',');
+                    writer.WriteValue(',');
 
                     if (indent > 0)
                     {
                         if (multiline)
                             writer.WriteLine();
                         else
-                            writer.Write(' ');
+                            writer.WriteValue(' ');
                     }
                 }
                 else
@@ -681,12 +681,12 @@ namespace Halak
                 Indent(writer, indent, depth);
             }
 
-            writer.Write(']');
+            writer.WriteValue(']');
         }
 
         private static void Serialize(TextWriter writer, ObjectKeyValueEnumerator value, int indent, int depth, bool multiline)
         {
-            writer.Write('{');
+            writer.WriteValue('{');
 
             if (indent > 0 && multiline)
                 writer.WriteLine();
@@ -696,14 +696,14 @@ namespace Halak
             {
                 if (isFirst == false)
                 {
-                    writer.Write(',');
+                    writer.WriteValue(',');
 
                     if (indent > 0)
                     {
                         if (multiline)
                             writer.WriteLine();
                         else
-                            writer.Write(' ');
+                            writer.WriteValue(' ');
                     }
                 }
                 else
@@ -713,9 +713,9 @@ namespace Halak
                     Indent(writer, indent, depth + 1);
 
                 Serialize(writer, item.Key, indent, depth + 1);
-                writer.Write(':');
+                writer.WriteValue(':');
                 if (indent > 0)
-                    writer.Write(' ');
+                    writer.WriteValue(' ');
                 Serialize(writer, item.Value, indent, depth + 1);
             }
 
@@ -725,7 +725,7 @@ namespace Halak
                 Indent(writer, indent, depth);
             }
 
-            writer.Write('}');
+            writer.WriteValue('}');
         }
 
         #endregion

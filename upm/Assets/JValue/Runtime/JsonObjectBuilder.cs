@@ -38,7 +38,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
+            writer.WritePropertyName(key);
             writer.WriteNull();
             return this;
         }
@@ -47,8 +47,8 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
-            writer.Write(value);
+            writer.WritePropertyName(key);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -56,8 +56,8 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
-            writer.Write(value);
+            writer.WritePropertyName(key);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -65,8 +65,8 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
-            writer.Write(value);
+            writer.WritePropertyName(key);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -74,8 +74,8 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
-            writer.Write(value);
+            writer.WritePropertyName(key);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -83,8 +83,8 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
-            writer.Write(value);
+            writer.WritePropertyName(key);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -92,8 +92,8 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
-            writer.Write(value);
+            writer.WritePropertyName(key);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -101,8 +101,8 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
-            writer.Write(value);
+            writer.WritePropertyName(key);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -110,8 +110,8 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
-            writer.Write(value);
+            writer.WritePropertyName(key);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -119,7 +119,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
+            writer.WritePropertyName(key);
             var arrayBuilder = new JsonArrayBuilder(writer);
             put(arrayBuilder);
             arrayBuilder.Dispose();
@@ -130,7 +130,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
+            writer.WritePropertyName(key);
             var arrayBuilder = new JsonArrayBuilder(writer);
             put(arrayBuilder, value);
             arrayBuilder.Dispose();
@@ -141,7 +141,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
+            writer.WritePropertyName(key);
             var objectBuilder = new JsonObjectBuilder(writer);
             put(objectBuilder);
             objectBuilder.Dispose();
@@ -152,7 +152,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.WriteKey(key);
+            writer.WritePropertyName(key);
             var objectBuilder = new JsonObjectBuilder(writer);
             put(objectBuilder, value);
             objectBuilder.Dispose();

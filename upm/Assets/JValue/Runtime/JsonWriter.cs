@@ -6,6 +6,7 @@ using System.Text;
 
 namespace Halak
 {
+    // TODO add Assert
     public sealed class JsonWriter : IDisposable
     {
         private TextWriter underlyingWriter;
@@ -42,14 +43,15 @@ namespace Halak
         public void WriteEndObject() => underlyingWriter.Write('}');
 
         public void WriteNull() => underlyingWriter.Write(JValue.NullLiteral);
-        public void Write(bool value) => underlyingWriter.Write(value ? JValue.TrueLiteral : JValue.FalseLiteral);
-        public void Write(int value) => underlyingWriter.WriteInt32(value);
-        public void Write(long value) => underlyingWriter.WriteInt64(value);
-        public void Write(float value) => underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
-        public void Write(double value) => underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
-        public void Write(decimal value) => underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
-        public void Write(string value) => underlyingWriter.WriteEscapedString(value);
-        public void Write(JValue value) => value.WriteTo(underlyingWriter);
+        public void WriteValue(bool value) => underlyingWriter.Write(value ? JValue.TrueLiteral : JValue.FalseLiteral);
+        public void WriteValue(byte value) => underlyingWriter.Write(value);
+        public void WriteValue(int value) => underlyingWriter.WriteInt32(value);
+        public void WriteValue(long value) => underlyingWriter.WriteInt64(value);
+        public void WriteValue(float value) => underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
+        public void WriteValue(double value) => underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
+        public void WriteValue(decimal value) => underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
+        public void WriteValue(string value) => underlyingWriter.WriteEscapedString(value);
+        public void WriteValue(JValue value) => value.WriteTo(underlyingWriter);
 
         public void WriteCommaIf(int offset)
         {
@@ -61,7 +63,7 @@ namespace Halak
             this.offset++;
         }
 
-        public void WriteKey(string key)
+        public void WritePropertyName(string key)
         {
             underlyingWriter.WriteEscapedString(key);
             underlyingWriter.Write(':');

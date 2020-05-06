@@ -48,7 +48,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.Write(value);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -56,7 +56,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.Write(value);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -64,7 +64,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.Write(value);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -72,7 +72,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.Write(value);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -80,7 +80,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.Write(value);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -88,7 +88,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.Write(value);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -96,7 +96,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.Write(value);
+            writer.WriteValue(value);
             return this;
         }
 
@@ -104,7 +104,7 @@ namespace Halak
         {
             EnsureJsonWriter();
             writer.WriteCommaIf(startOffset);
-            writer.Write(value);
+            writer.WriteValue(value);
             return this;
         }
 
