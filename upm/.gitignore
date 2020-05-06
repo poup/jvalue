@@ -1,0 +1,17 @@
+.vs
+*.user
+obj
+bin
+.idea
+.DS_Store
+.localhistory
+.history
+/target
+project
+
+Library
+Logs
+Temp
+*.csproj
+*.sln
+.vscode
