@@ -28,6 +28,11 @@ namespace Halak
                 this.index = startIndex;
             }
 
+            public CharEnumerator GetEnumerator()
+            {
+                return this;
+            }
+
             public bool MoveNext()
             {
                 if (0 <= index && index < source.Length - 1)

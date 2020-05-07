@@ -1,7 +1,6 @@
 using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using UnityEngine.Assertions;
 
 namespace Halak
@@ -21,7 +20,7 @@ namespace Halak
 
             internal ObjectKeyValueEnumerator(JValue value)
             {
-                Assert.IsTrue(value.Type == TypeCode.Object);
+                Assert.IsTrue(value.typeCode == TypeCode.Object);
 
                 m_source = value;
                 m_endIndex = value.startIndex + value.length - 1;
@@ -49,12 +48,19 @@ namespace Halak
                 var keyStart = m_nextIndex;
                 var keyEnd = source.SkipString(keyStart);
 
+                var sourceString = source.source;
+
+                if (sourceString[keyStart] != '"' || sourceString[keyEnd] != '"')
+                {
+                    throw new JsonException("expected property name (quoted string)", sourceString, keyStart, keyEnd-keyStart);
+                }
+
                 var valueStart = source.SkipWhitespaces(keyEnd + 1);
                 var valueEnd = source.SkipValue(valueStart);
 
                 m_current = new KeyValuePair<JValue, JValue>(
-                    new JValue(source.source, keyStart, keyEnd - keyStart),
-                    new JValue(source.source, valueStart, valueEnd - valueStart)
+                    new JValue(sourceString, keyStart, keyEnd - keyStart),
+                    new JValue(sourceString, valueStart, valueEnd - valueStart)
                 );
 
                 m_nextIndex = source.SkipWhitespaces(valueEnd + 1);
@@ -69,6 +75,16 @@ namespace Halak
 
             public void Dispose()
             {
+            }
+
+            public Dictionary<string, JValue> ToDictionary()
+            {
+                var dictionary = new Dictionary<string, JValue>();
+                foreach (var pair in this)
+                {
+                    dictionary[pair.Key.ToString()] = pair.Value;
+                }
+                return dictionary;
             }
         }
     }

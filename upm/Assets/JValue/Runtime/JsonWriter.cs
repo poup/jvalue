@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -7,12 +8,12 @@ using System.Text;
 namespace Halak
 {
     // TODO add Assert
-    public sealed class JsonWriter : IDisposable
+    [PublicAPI]
+    public sealed partial class JsonWriter : IDisposable
     {
         private TextWriter underlyingWriter;
-        private int offset;
-
-        public int Offset => offset;
+        private Formatter m_formatter = Formatter.compact;
+        private bool needComma;
 
         public JsonWriter(int capacity)
             : this(new StringBuilder(capacity))
@@ -27,47 +28,189 @@ namespace Halak
         public JsonWriter(TextWriter writer)
         {
             this.underlyingWriter = writer;
-            this.offset = 0;
+        }
+
+        public void SetFormatter(Formatter formatter)
+        {
+            m_formatter = formatter ?? Formatter.compact;
         }
 
         public void Dispose()
         {
-            var disposingWriter = underlyingWriter;
+            underlyingWriter?.Dispose();
             underlyingWriter = null;
-            disposingWriter?.Dispose();
-        }
-
-        public void WriteStartArray() => underlyingWriter.Write('[');
-        public void WriteEndArray() => underlyingWriter.Write(']');
-        public void WriteStartObject() => underlyingWriter.Write('{');
-        public void WriteEndObject() => underlyingWriter.Write('}');
-
-        public void WriteNull() => underlyingWriter.Write(JValue.NullLiteral);
-        public void WriteValue(bool value) => underlyingWriter.Write(value ? JValue.TrueLiteral : JValue.FalseLiteral);
-        public void WriteValue(byte value) => underlyingWriter.Write(value);
-        public void WriteValue(int value) => underlyingWriter.WriteInt32(value);
-        public void WriteValue(long value) => underlyingWriter.WriteInt64(value);
-        public void WriteValue(float value) => underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
-        public void WriteValue(double value) => underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
-        public void WriteValue(decimal value) => underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
-        public void WriteValue(string value) => underlyingWriter.WriteEscapedString(value);
-        public void WriteValue(JValue value) => value.WriteTo(underlyingWriter);
-
-        public void WriteCommaIf(int offset)
-        {
-            if (this.offset != offset)
-            {
-                underlyingWriter.Write(',');
-            }
-
-            this.offset++;
         }
 
         public void WritePropertyName(string key)
         {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+            }
+
             underlyingWriter.WriteEscapedString(key);
-            underlyingWriter.Write(':');
+
+            m_formatter.WritePropertySeparator(underlyingWriter);
+            needComma = false;
         }
+
+
+        public void WriteStartArray()
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            m_formatter.WriteStartArrayToken(underlyingWriter);
+        }
+
+        public void WriteEndArray()
+        {
+            m_formatter.WriteEndArrayToken(underlyingWriter);
+            needComma = true;
+        }
+
+
+        public void WriteStartObject()
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            m_formatter.WriteStartObjectToken(underlyingWriter);
+        }
+
+        public void WriteEndObject()
+        {
+            m_formatter.WriteEndObjectToken(underlyingWriter);
+            needComma = true;
+        }
+
+
+        public void WriteNull()
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.Write(JValue.NullLiteral);
+            needComma = true;
+        }
+
+
+        public void WriteValue(bool value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.Write(value ? JValue.TrueLiteral : JValue.FalseLiteral);
+            needComma = true;
+        }
+
+        public void WriteValue(char value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.Write(value);
+            needComma = true;
+        }
+
+        public void WriteValue(byte value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.Write(value);
+            needComma = true;
+        }
+
+        public void WriteValue(int value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.WriteInt32(value);
+            needComma = true;
+        }
+
+        public void WriteValue(long value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.WriteInt64(value);
+            needComma = true;
+        }
+
+        public void WriteValue(float value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
+            needComma = true;
+        }
+
+        public void WriteValue(double value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
+            needComma = true;
+        }
+
+        public void WriteValue(decimal value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
+            needComma = true;
+        }
+
+        public void WriteValue(string value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            underlyingWriter.WriteEscapedString(value);
+            needComma = true;
+        }
+
+        public void WriteValue(JValue value)
+        {
+            if (needComma)
+            {
+                m_formatter.WriteValueSeparator(underlyingWriter);
+                needComma = false;
+            }
+            value.WriteTo(this);
+            needComma = true;
+        }
+
 
         public JValue BuildJson()
         {

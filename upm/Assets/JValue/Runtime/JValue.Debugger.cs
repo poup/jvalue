@@ -11,7 +11,7 @@ namespace Halak
 
         private string ToDebuggerType()
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Null:    return "JValue.Null";
                 case TypeCode.Boolean: return "JValue.Boolean";
@@ -25,11 +25,11 @@ namespace Halak
 
         private string ToDebuggerDisplay()
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Array:
                 case TypeCode.Object:
-                    var serialized = Serialize(0);
+                    var serialized = Serialize(JsonWriter.Formatter.compact);
                     if (serialized.Length > EllipsisCount)
                         serialized = serialized.Substring(0, EllipsisCount - 3) + "...";
                     var elementCount = GetElementCount();
@@ -96,7 +96,7 @@ namespace Halak
             {
                 get
                 {
-                    switch (value.Type)
+                    switch (value.typeCode)
                     {
                         case TypeCode.Null:
                         case TypeCode.Boolean:

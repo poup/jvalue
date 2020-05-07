@@ -1,6 +1,7 @@
 ﻿using JetBrains.Annotations;
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace Halak
 {
@@ -81,33 +82,44 @@ namespace Halak
             this.toExponent = toExponent;
         }
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ToInt32(int defaultValue = default(int))
             => ParseInt32(source, startIndex, length, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int? ToNullableInt32()
             => ParseNullableInt32(source, startIndex, length);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long ToInt64(long defaultValue = default(long))
             => ParseInt64(source, startIndex, length, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long? ToNullableInt64()
             => ParseNullableInt64(source, startIndex, length);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float ToSingle(float defaultValue = default(float))
             => ParseSingle(source, startIndex, length, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float? ToNullableSingle()
             => ParseNullableSingle(source, startIndex, length);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double ToDouble(double defaultValue = default(double))
             => ParseDouble(source, startIndex, length, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double? ToNullableDouble()
             => ParseNullableDouble(source, startIndex, length);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public decimal ToDecimal(decimal defaultValue = default(decimal))
             => ParseDecimal(source, startIndex, length, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public decimal? ToNullableDecimal()
             => ParseNullableDecimal(source, startIndex, length);
 

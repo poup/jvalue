@@ -37,6 +37,7 @@ namespace Halak
             1E+0, 1E+1, 1E+2, 1E+3, 1E+4, 1E+5, 1E+6, 1E+7, 1E+8, 1E+9, 1E+10, 1E+11, 1E+12, 1E+13, 1E+14, 1E+15, 1E+16, 1E+17, 1E+18, 1E+19, 1E+20, 1E+21, 1E+22, 1E+23
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SkipIntegerPart(string s, int end, int index)
         {
             for (; index < end; index++)
@@ -53,6 +54,7 @@ namespace Halak
             return end;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SkipFractionalPart(string s, int end, int index)
         {
             for (; index < end; index++)

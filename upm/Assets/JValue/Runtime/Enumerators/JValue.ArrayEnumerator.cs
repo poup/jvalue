@@ -7,7 +7,7 @@ namespace Halak
 {
     public readonly partial struct JValue
     {
-        public struct ArrayEnumerator: IEnumerator<JValue>
+        public struct ArrayEnumerator : IEnumerator<JValue>
         {
             private readonly JValue m_source;
             private readonly int m_endIndex;
@@ -20,7 +20,7 @@ namespace Halak
 
             internal ArrayEnumerator(JValue value)
             {
-                Assert.IsTrue(value.Type == TypeCode.Array);
+                Assert.IsTrue(value.typeCode == TypeCode.Array);
                 m_source = value;
                 m_endIndex = value.startIndex + value.length - 1;
 
@@ -51,6 +51,7 @@ namespace Halak
                 m_nextIndex = source.SkipWhitespaces(currentEnd + 1);
                 return true;
             }
+
             public void Reset()
             {
                 m_nextIndex = m_source.SkipWhitespaces(m_source.startIndex);

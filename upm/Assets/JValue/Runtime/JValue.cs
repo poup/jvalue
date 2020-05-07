@@ -1,8 +1,11 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
+using UnityEngine.Assertions;
 
 namespace Halak
 {
@@ -11,6 +14,7 @@ namespace Halak
     /// </summary>
     /// <seealso cref="http://www.json.org/"/>
     /// <seealso cref="https://github.com/halak/jvalue/"/>
+    [PublicAPI]
     public readonly partial struct JValue : IComparable<JValue>, IEquatable<JValue>
     {
         #region TypeCode
@@ -25,23 +29,81 @@ namespace Halak
             Object,
         }
 
+
+        public static TypeCode ComputeTypeCode(string source, int index, int length)
+        {
+            if (source == null)
+            {
+                return TypeCode.Null;
+            }
+
+            var end = BackwardSkipWhitespaces(source, length - 1) + 1;
+            length = Math.Min(source.Length, end - index);
+
+            if (length <= 0)
+            {
+                return TypeCode.Null;
+            }
+
+            switch (source[index])
+            {
+                case '"':
+                    if (length < 2 || source[length - 1] != '"')
+                        throw new JsonException("string not closed", source, index, length);
+
+                    return TypeCode.String;
+
+                case '[':
+                    if (length < 2 || source[length - 1] != ']')
+                        throw new JsonException("array not closed", source, index, length);
+
+                    return TypeCode.Array;
+
+                case '{':
+                    if (length < 2 || source[length - 1] != '}')
+                        throw new JsonException("object not closed", source, index, length);
+
+                    return TypeCode.Object;
+
+                case 't':
+                    if (length != 4 || source[index + 1] != 'r' || source[index + 2] != 'u' || source[index + 3] != 'e')
+                        throw new JsonException("Illegal boolean: expect true", source, index, length);
+
+                    return TypeCode.Boolean;
+
+                case 'f':
+                    if (length != 5 || source[index + 1] != 'a' || source[index + 2] != 'l' || source[index + 3] != 's' || source[index + 4] != 'e')
+                        throw new JsonException("Illegal boolean: expect false", source, index, length);
+
+                    return TypeCode.Boolean;
+
+                case 'n':
+                    if (length != 4 || source[index + 1] != 'u' || source[index + 2] != 'l' || source[index + 3] != 'l')
+                        throw new JsonException("Illegal null: expect null", source, index, length);
+
+                    return TypeCode.Null;
+
+                default:
+                    // TODO checker is a number ?
+                    return TypeCode.Number;
+            }
+        }
+
         #endregion
 
 
         #region Static Fields
 
-        private const string indent = "  ";
-
         internal const string NullLiteral = "null";
         internal const string TrueLiteral = "true";
         internal const string FalseLiteral = "false";
 
-        public static readonly JValue Null = new JValue("null", false);
-        public static readonly JValue True = new JValue(true);
-        public static readonly JValue False = new JValue(false);
-        public static readonly JValue EmptyString = new JValue("\"\"", false);
-        public static readonly JValue EmptyArray = new JValue("[]", false);
-        public static readonly JValue EmptyObject = new JValue("{}", false);
+        public static readonly JValue Null = new JValue(NullLiteral, TypeCode.Null);
+        public static readonly JValue True = new JValue(TrueLiteral, TypeCode.Boolean);
+        public static readonly JValue False = new JValue(FalseLiteral, TypeCode.Boolean);
+        public static readonly JValue EmptyString = new JValue("\"\"", TypeCode.String);
+        public static readonly JValue EmptyArray = new JValue("[]", TypeCode.Array);
+        public static readonly JValue EmptyObject = new JValue("{}", TypeCode.Object);
 
         #endregion
 
@@ -51,6 +113,7 @@ namespace Halak
         public readonly string source;
         public readonly int startIndex;
         public readonly int length;
+        public readonly TypeCode typeCode;
 
         #endregion
 
@@ -58,37 +121,12 @@ namespace Halak
         #region Properties
 
         public int endIndex => startIndex + length - 1;
-
-        public TypeCode Type
-        {
-            get
-            {
-                if (source != null && source.Length > 0)
-                {
-                    switch (source[startIndex])
-                    {
-                        case '"': return TypeCode.String;
-                        case '[': return TypeCode.Array;
-                        case '{': return TypeCode.Object;
-
-                        case 't':
-                        case 'f':
-                            return TypeCode.Boolean;
-
-                        case 'n': return TypeCode.Null;
-                        default:  return TypeCode.Number;
-                    }
-                }
-                return TypeCode.Null;
-            }
-        }
+        public JValue this[string key] => Get(key);
 
         #endregion
 
 
         #region Indexer
-
-        public JValue this[string key] => Get(key);
 
         #endregion
 
@@ -106,31 +144,31 @@ namespace Halak
             return Null;
         }
 
-        public JValue(bool value) : this(value ? TrueLiteral : FalseLiteral, false)
+        public JValue(bool value) : this(value ? TrueLiteral : FalseLiteral, TypeCode.Boolean)
         {
         }
 
-        public JValue(int value) : this(value.ToString(NumberFormatInfo.InvariantInfo), false)
+        public JValue(int value) : this(value.ToString(NumberFormatInfo.InvariantInfo), TypeCode.Number)
         {
         }
 
-        public JValue(long value) : this(value.ToString(NumberFormatInfo.InvariantInfo), false)
+        public JValue(long value) : this(value.ToString(NumberFormatInfo.InvariantInfo), TypeCode.Number)
         {
         }
 
-        public JValue(ulong value) : this(value.ToString(NumberFormatInfo.InvariantInfo), false)
+        public JValue(ulong value) : this(value.ToString(NumberFormatInfo.InvariantInfo), TypeCode.Number)
         {
         }
 
-        public JValue(float value) : this(value.ToString(NumberFormatInfo.InvariantInfo), false)
+        public JValue(float value) : this(value.ToString(NumberFormatInfo.InvariantInfo), TypeCode.Number)
         {
         }
 
-        public JValue(double value) : this(value.ToString(NumberFormatInfo.InvariantInfo))
+        public JValue(double value) : this(value.ToString(NumberFormatInfo.InvariantInfo), TypeCode.Number)
         {
         }
 
-        public JValue(decimal value) : this(value.ToString(NumberFormatInfo.InvariantInfo))
+        public JValue(decimal value) : this(value.ToString(NumberFormatInfo.InvariantInfo), TypeCode.Number)
         {
         }
 
@@ -144,6 +182,7 @@ namespace Halak
                     source = writer.GetStringBuilder().ToString();
                     startIndex = 0;
                     length = source.Length;
+                    typeCode = TypeCode.String;
                 }
             }
             else
@@ -151,46 +190,35 @@ namespace Halak
                 source = null;
                 startIndex = 0;
                 length = 0;
+                typeCode = TypeCode.Null;
             }
         }
 
-        public JValue(IEnumerable<JValue> array) : this(From(array))
-        {
-        }
-
-        public JValue(IEnumerable<KeyValuePair<string, JValue>> obj) : this(From(obj))
-        {
-        }
 
         internal JValue(string source, int startIndex, int length)
         {
             this.source = source;
             this.startIndex = startIndex;
             this.length = length;
+            this.typeCode = ComputeTypeCode(source, startIndex, length);
         }
 
-        private JValue(string source, bool _) : this(source, 0, source.Length)
+        private JValue(string source, TypeCode typeCode) : this(source, 0, source.Length, typeCode)
         {
         }
 
-        private JValue(JValue original) : this(original.source, original.startIndex, original.length)
+        private JValue(JValue original) : this(original.source, original.startIndex, original.length, original.typeCode)
         {
         }
 
-        private static JValue From(IEnumerable<JValue> array)
+        private JValue(string source, int startIndex, int length, TypeCode typeCode)
         {
-            var builder = new JsonArrayBuilder(512);
-            foreach (var element in array)
-                builder.Push(element);
-            return builder.Build();
-        }
+            this.source = source;
+            this.startIndex = startIndex;
+            this.length = length;
+            this.typeCode = typeCode;
 
-        private static JValue From(IEnumerable<KeyValuePair<string, JValue>> obj)
-        {
-            var builder = new JsonObjectBuilder(512);
-            foreach (var member in obj)
-                builder.Put(member.Key, member.Value);
-            return builder.Build();
+            Assert.IsTrue(typeCode == ComputeTypeCode(source, startIndex, length));
         }
 
         #endregion
@@ -202,7 +230,7 @@ namespace Halak
 
         public bool ToBoolean(bool defaultValue = false)
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Null:    return defaultValue;
                 case TypeCode.Boolean: return ToBooleanCore();
@@ -216,7 +244,7 @@ namespace Halak
 
         public int ToInt32(int defaultValue = 0)
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Boolean: return ToBooleanCore() ? 1 : 0;
                 case TypeCode.Number:  return ToInt32Core(defaultValue);
@@ -227,7 +255,7 @@ namespace Halak
 
         public long ToInt64(long defaultValue = 0)
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Boolean: return ToBooleanCore() ? 1 : 0;
                 case TypeCode.Number:  return ToInt64Core(defaultValue);
@@ -238,7 +266,7 @@ namespace Halak
 
         public float ToSingle(float defaultValue = 0.0f)
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Boolean: return ToBooleanCore() ? 1 : 0;
                 case TypeCode.Number:  return ToSingleCore(defaultValue);
@@ -249,7 +277,7 @@ namespace Halak
 
         public double ToDouble(double defaultValue = 0.0)
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Boolean: return ToBooleanCore() ? 1.0 : 0.0;
                 case TypeCode.Number:  return ToDoubleCore(defaultValue);
@@ -260,7 +288,7 @@ namespace Halak
 
         public decimal ToDecimal(decimal defaultValue = 0.0m)
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Boolean: return ToBooleanCore() ? 1.0m : 0.0m;
                 case TypeCode.Number:  return ToDecimalCore(defaultValue);
@@ -276,7 +304,7 @@ namespace Halak
 
         public JNumber ToNumber(JNumber defaultValue)
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Boolean: return ToBooleanCore() ? JNumber.One : JNumber.Zero;
                 case TypeCode.Number:  return ToNumberCore(defaultValue);
@@ -285,30 +313,37 @@ namespace Halak
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool ToBooleanCore()
             => source[startIndex] == 't';
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int ToInt32Core(int defaultValue)
             => JNumber.ParseInt32(source, startIndex, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private long ToInt64Core(long defaultValue)
             => JNumber.ParseInt64(source, startIndex, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ToSingleCore(float defaultValue)
             => JNumber.ParseSingle(source, startIndex, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private double ToDoubleCore(double defaultValue)
             => JNumber.ParseDouble(source, startIndex, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private decimal ToDecimalCore(decimal defaultValue)
             => JNumber.ParseDecimal(source, startIndex, length, defaultValue);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private JNumber ToNumberCore(JNumber defaultValue)
             => JNumber.TryParse(source, startIndex, out var value) ? value : defaultValue;
 
         public string ToUnescapedString(string defaultValue = "")
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Boolean: return ToBooleanCore() ? TrueLiteral : FalseLiteral;
                 case TypeCode.Number:  return source.Substring(startIndex, length);
@@ -334,10 +369,10 @@ namespace Halak
             for (var i = startIndex + 1; i < end; i++)
             {
                 if (source[i] == '\\')
-                    return new JValue(ToUnescapedStringCore(), false);
+                    return new JValue(ToUnescapedStringCore(), TypeCode.Number);
             }
 
-            return new JValue(source, startIndex + 1, length - 2);
+            return new JValue(source, startIndex + 1, length - 2, TypeCode.Number);
         }
 
         #endregion
@@ -347,50 +382,25 @@ namespace Halak
 
         private JValue Get(string key)
         {
-            if (Type == TypeCode.Object)
+            if (typeCode == TypeCode.Object)
             {
-                var end = startIndex + length - 1;
-
-                var kStart = SkipWhitespaces(startIndex + 1);
-                while (kStart < end)
+                foreach (var pair in GetObjectKeyValues())
                 {
-                    var kEnd = SkipString(kStart);
-                    var vStart = SkipWhitespaces(kEnd + 1);
-                    var vEnd = SkipValue(vStart);
-
-                    if (EqualsKey(key, source, kStart, kEnd - kStart - 2))
-                        return new JValue(source, vStart, vEnd - vStart);
-
-                    kStart = SkipWhitespaces(vEnd + 1);
+                    if (pair.Key.EqualsPropertyName(key))
+                    {
+                        return pair.Value;
+                    }
                 }
             }
 
             return Null;
         }
 
-        private static bool EqualsKey(string key, string escapedKey, int escapedKeyStart, int escapedKeyLength)
-        {
-            if (key.Length > escapedKeyLength)
-                return false;
-
-            var aIndex = 0;
-            var bEnumerator = new CharEnumerator(escapedKey, escapedKeyStart);
-            for (;;)
-            {
-                var x = aIndex < key.Length;
-                var y = bEnumerator.MoveNext();
-                if (x && y)
-                {
-                    if (key[aIndex++] != bEnumerator.Current)
-                        return false;
-                }
-                else
-                    return x == y;
-            }
-        }
 
         private int GetElementCount()
         {
+            Assert.IsTrue(typeCode == TypeCode.Array || typeCode == TypeCode.Object);
+
             var count = 0;
             var depth = 0;
             var end = startIndex + length - 1; // ignore } or ]
@@ -430,6 +440,11 @@ namespace Halak
                 }
             }
 
+            if (depth != 0)
+            {
+                throw new JsonException($"{typeCode} is not closed", this);
+            }
+
             return count;
         }
 
@@ -438,10 +453,13 @@ namespace Halak
 
         #region Enumeration
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ArrayEnumerator GetArrayItems() => new ArrayEnumerator(this);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ObjectKeyValueEnumerator GetObjectKeyValues() => new ObjectKeyValueEnumerator(this);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public CharEnumerator GetCharEnumerator() => new CharEnumerator(this);
 
         private int SkipValue(int index)
@@ -462,16 +480,19 @@ namespace Halak
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int SkipWhitespaces(int index)
         {
             return SkipWhitespaces(source, index, startIndex + length);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SkipWhitespaces(string source)
         {
             return SkipWhitespaces(source, 0, source.Length);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SkipWhitespaces(string source, int index, int end)
         {
             for (; index < end; index++)
@@ -493,6 +514,7 @@ namespace Halak
             return end;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int BackwardSkipWhitespaces(string source, int index)
         {
             for (; index >= 0; index--)
@@ -511,6 +533,7 @@ namespace Halak
             return -1;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int SkipLetterOrDigit(int index)
         {
             var end = startIndex + length;
@@ -534,6 +557,7 @@ namespace Halak
             return end;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int SkipString(int index)
         {
             var end = startIndex + length;
@@ -549,10 +573,12 @@ namespace Halak
                         break;
                 }
             }
+            throw new JsonException($"string not closed", this);
 
             return end;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int SkipBracket(int index)
         {
             var end = startIndex + length;
@@ -581,6 +607,10 @@ namespace Halak
                 }
             }
 
+            if (depth != 0)
+            {
+                throw new JsonException($"{typeCode} not closed", this);
+            }
             return end;
         }
 
@@ -589,143 +619,83 @@ namespace Halak
 
         #region Serialization
 
-        public string Serialize(int indent = 2)
+        public string Serialize(JsonWriter.Formatter formatter = null)
         {
-            var builder = new StringBuilder(indent == 0 ? length : length * 2);
-            Serialize(builder, indent);
+            var builder = new StringBuilder(length);
+            Serialize(builder, formatter);
             return builder.ToString();
         }
 
-        public void Serialize(StringBuilder builder, int indent = 2)
+        public void Serialize(StringBuilder builder, JsonWriter.Formatter formatter = null)
         {
-            using (var writer = new StringWriter(builder, CultureInfo.InvariantCulture))
-                Serialize(writer, this, indent, 0);
+            using (var sw = new StringWriter(builder, CultureInfo.InvariantCulture))
+            {
+                var writer = new JsonWriter(sw);
+                writer.SetFormatter(formatter);
+
+                Serialize(writer, this);
+            }
         }
 
-        public void Serialize(TextWriter writer, int indent = 2)
-            => Serialize(writer, this, indent, 0);
+        public void Serialize(JsonWriter writer) => Serialize(writer, this);
 
-        internal void WriteTo(TextWriter writer)
+        internal void WriteTo(JsonWriter writer)
         {
-            if (Type != TypeCode.Null)
+            if (typeCode != TypeCode.Null)
             {
                 var end = startIndex + length;
                 for (var i = startIndex; i < end; i++)
+                {
                     writer.WriteValue(source[i]);
+                }
             }
             else
-                writer.WriteValue(NullLiteral);
+            {
+                writer.WriteNull();
+            }
         }
 
-        private static void Indent(TextWriter writer, int indent, int depth)
+        private static void Serialize(JsonWriter writer, JValue value)
         {
-            var spaces = indent * depth;
-            for (var i = 0; i < spaces; i++)
-                writer.WriteValue(' ');
-        }
-
-        private static void Serialize(TextWriter writer, JValue value, int indent, int depth)
-        {
-            switch (value.Type)
+            switch (value.typeCode)
             {
                 case TypeCode.Array:
-                    Serialize(writer, value.GetArrayItems(), indent, depth, indent > 0 && value.length > 80);
+                    Serialize(writer, value.GetArrayItems());
                     break;
 
                 case TypeCode.Object:
-                    Serialize(writer, value.GetObjectKeyValues(), indent, depth, indent > 0 && value.length > 80);
+                    Serialize(writer, value.GetObjectKeyValues());
                     break;
 
                 default:
-                    value.WriteTo(writer);
+                    writer.WriteValue(value);
                     break;
             }
         }
 
-        private static void Serialize(TextWriter writer, ArrayEnumerator value, int indent, int depth, bool multiline)
+        private static void Serialize(JsonWriter writer, ArrayEnumerator value)
         {
-            writer.WriteValue('[');
+            writer.WriteStartArray();
 
-            if (indent > 0 && multiline)
-                writer.WriteLine();
-
-            var isFirst = true;
             foreach (var item in value)
             {
-                if (!isFirst)
-                {
-                    writer.WriteValue(',');
-
-                    if (indent > 0)
-                    {
-                        if (multiline)
-                            writer.WriteLine();
-                        else
-                            writer.WriteValue(' ');
-                    }
-                }
-                else
-                {
-                    isFirst = false;
-                }
-
-                if (indent > 0 && multiline)
-                    Indent(writer, indent, depth + 1);
-
-                Serialize(writer, item, indent, depth + 1);
+                Serialize(writer, item);
             }
 
-            if (indent > 0 && multiline)
-            {
-                writer.WriteLine();
-                Indent(writer, indent, depth);
-            }
-
-            writer.WriteValue(']');
+            writer.WriteEndArray();
         }
 
-        private static void Serialize(TextWriter writer, ObjectKeyValueEnumerator value, int indent, int depth, bool multiline)
+        private static void Serialize(JsonWriter writer, ObjectKeyValueEnumerator value)
         {
-            writer.WriteValue('{');
+            writer.WriteStartObject();
 
-            if (indent > 0 && multiline)
-                writer.WriteLine();
-
-            var isFirst = true;
-            foreach (var item in value)
+            foreach (var pair in value)
             {
-                if (isFirst == false)
-                {
-                    writer.WriteValue(',');
-
-                    if (indent > 0)
-                    {
-                        if (multiline)
-                            writer.WriteLine();
-                        else
-                            writer.WriteValue(' ');
-                    }
-                }
-                else
-                    isFirst = false;
-
-                if (indent > 0 && multiline)
-                    Indent(writer, indent, depth + 1);
-
-                Serialize(writer, item.Key, indent, depth + 1);
-                writer.WriteValue(':');
-                if (indent > 0)
-                    writer.WriteValue(' ');
-                Serialize(writer, item.Value, indent, depth + 1);
+                writer.WritePropertyName(pair.Key);
+                Serialize(writer, pair.Value);
             }
 
-            if (indent > 0 && multiline)
-            {
-                writer.WriteLine();
-                Indent(writer, indent, depth);
-            }
-
-            writer.WriteValue('}');
+            writer.WriteEndObject();
         }
 
         #endregion
@@ -733,7 +703,7 @@ namespace Halak
 
         public override int GetHashCode()
         {
-            switch (Type)
+            switch (typeCode)
             {
                 case TypeCode.Null:    return 0;
                 case TypeCode.Boolean: return ToBoolean() ? 0x392307A6 : 0x63D95114;
@@ -745,13 +715,59 @@ namespace Halak
             }
         }
 
+        public bool Equals(string other)
+        {
+            if (other.Length != length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < length; ++i)
+            {
+                var j = i + startIndex;
+                if (source[j] != other[i])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public bool EqualsPropertyName(string name)
+        {
+            Assert.IsTrue(typeCode == TypeCode.String);
+
+            var nameLength = name.Length;
+            if (nameLength > length - 2)
+            {
+                return false;
+            }
+
+            int i = 0;
+            var keyWithoutQuotes = new JValue(source, startIndex + 1, length - 2);
+            foreach (var c in keyWithoutQuotes.GetCharEnumerator())
+            {
+                if (i >= nameLength)
+                {
+                    return false;
+                }
+                if (c != name[i])
+                {
+                    return false;
+                }
+                ++i;
+            }
+
+            return true;
+        }
+
         public bool Equals(JValue other) => Equals(this, other);
         public int CompareTo(JValue other) => Compare(this, other);
         public override bool Equals(object obj) => obj is JValue other && Equals(other);
 
         public override string ToString()
         {
-            if (Type != TypeCode.Null)
+            if (typeCode != TypeCode.Null)
                 return (startIndex == 0 && length == source.Length) ? source : source.Substring(startIndex, length);
 
             return NullLiteral;
@@ -762,23 +778,33 @@ namespace Halak
 
         private int GetStringHashCode()
         {
+            Assert.IsTrue(typeCode == TypeCode.String);
+
             var enumerator = GetCharEnumerator();
             var hashCode = 0x219FFA9C;
             while (enumerator.MoveNext())
+            {
                 hashCode = HashCode.Combine(hashCode, enumerator.Current);
+            }
             return hashCode;
         }
 
         private int GetArrayHashCode()
         {
+            Assert.IsTrue(typeCode == TypeCode.Array);
+
             var hashCode = 0x12D398BA;
             foreach (var element in GetArrayItems())
+            {
                 hashCode = HashCode.Combine(hashCode, element.GetHashCode());
+            }
             return hashCode;
         }
 
         private int GetObjectHashCode()
         {
+            Assert.IsTrue(typeCode == TypeCode.Object);
+
             var hashCode = 0x50638734;
             foreach (var member in GetObjectKeyValues())
             {
@@ -793,8 +819,8 @@ namespace Halak
 
         public static bool Equals(JValue left, JValue right)
         {
-            var leftType = left.Type;
-            var rightType = right.Type;
+            var leftType = left.typeCode;
+            var rightType = right.typeCode;
             if (leftType == rightType)
             {
                 switch (leftType)
@@ -813,8 +839,8 @@ namespace Halak
 
         public static int Compare(JValue left, JValue right)
         {
-            var leftType = left.Type;
-            var rightType = right.Type;
+            var leftType = left.typeCode;
+            var rightType = right.typeCode;
             if (leftType == rightType)
             {
                 switch (leftType)
@@ -835,7 +861,9 @@ namespace Halak
         {
             var k = Compare(x.Key, y.Key);
             if (k != 0)
+            {
                 return k;
+            }
 
             return Compare(x.Value, y.Value);
         }
@@ -852,10 +880,14 @@ namespace Halak
                 {
                     var result = compare(a.Current, b.Current);
                     if (result != 0)
+                    {
                         return result;
+                    }
                 }
                 else
+                {
                     return 0;
+                }
             }
         }
 

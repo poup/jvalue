@@ -1,15 +1,13 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Halak
 {
     readonly partial struct JNumber
     {
-        public static int ParseInt32(string s, int defaultValue = default(int))
-            => ParseInt32(s, 0, s.Length, defaultValue);
+        public static int ParseInt32(string s, int defaultValue = default(int)) => ParseInt32(s, 0, s.Length, defaultValue);
 
-        public static int ParseInt32(string s, int startIndex, int defaultValue = default(int))
-            => ParseInt32(s, startIndex, s.Length, defaultValue);
-
+        public static int ParseInt32(string s, int startIndex, int defaultValue = default(int)) => ParseInt32(s, startIndex, s.Length, defaultValue);
         public static int ParseInt32(string s, int startIndex, int length, int defaultValue = default(int))
         {
             const int Zero = default(int);
@@ -145,11 +143,9 @@ namespace Halak
             }
         }
 
-        public static int? ParseNullableInt32(string s)
-            => ParseNullableInt32(s, 0, s.Length);
+        public static int? ParseNullableInt32(string s) => ParseNullableInt32(s, 0, s.Length);
 
-        public static int? ParseNullableInt32(string s, int startIndex)
-            => ParseNullableInt32(s, startIndex, s.Length);
+        public static int? ParseNullableInt32(string s, int startIndex) => ParseNullableInt32(s, startIndex, s.Length);
 
         public static int? ParseNullableInt32(string s, int startIndex, int length)
         {
@@ -286,11 +282,9 @@ namespace Halak
             }
         }
 
-        public static long ParseInt64(string s, long defaultValue = default(long))
-            => ParseInt64(s, 0, s.Length, defaultValue);
+        public static long ParseInt64(string s, long defaultValue = default(long)) => ParseInt64(s, 0, s.Length, defaultValue);
 
-        public static long ParseInt64(string s, int startIndex, long defaultValue = default(long))
-            => ParseInt64(s, startIndex, s.Length, defaultValue);
+        public static long ParseInt64(string s, int startIndex, long defaultValue = default(long)) => ParseInt64(s, startIndex, s.Length, defaultValue);
 
         public static long ParseInt64(string s, int startIndex, int length, long defaultValue = default(long))
         {
@@ -427,11 +421,9 @@ namespace Halak
             }
         }
 
-        public static long? ParseNullableInt64(string s)
-            => ParseNullableInt64(s, 0, s.Length);
+        public static long? ParseNullableInt64(string s) => ParseNullableInt64(s, 0, s.Length);
 
-        public static long? ParseNullableInt64(string s, int startIndex)
-            => ParseNullableInt64(s, startIndex, s.Length);
+        public static long? ParseNullableInt64(string s, int startIndex) => ParseNullableInt64(s, startIndex, s.Length);
 
         public static long? ParseNullableInt64(string s, int startIndex, int length)
         {
@@ -568,11 +560,9 @@ namespace Halak
             }
         }
 
-        public static float ParseSingle(string s, float defaultValue = default(float))
-            => ParseSingle(s, 0, s.Length, defaultValue);
+        public static float ParseSingle(string s, float defaultValue = default(float)) => ParseSingle(s, 0, s.Length, defaultValue);
 
-        public static float ParseSingle(string s, int startIndex, float defaultValue = default(float))
-            => ParseSingle(s, startIndex, s.Length, defaultValue);
+        public static float ParseSingle(string s, int startIndex, float defaultValue = default(float)) => ParseSingle(s, startIndex, s.Length, defaultValue);
 
         public static float ParseSingle(string s, int startIndex, int length, float defaultValue = default(float))
         {
@@ -688,11 +678,9 @@ namespace Halak
                 return defaultValue;  // overflow
         }
 
-        public static float? ParseNullableSingle(string s)
-            => ParseNullableSingle(s, 0, s.Length);
+        public static float? ParseNullableSingle(string s) => ParseNullableSingle(s, 0, s.Length);
 
-        public static float? ParseNullableSingle(string s, int startIndex)
-            => ParseNullableSingle(s, startIndex, s.Length);
+        public static float? ParseNullableSingle(string s, int startIndex) => ParseNullableSingle(s, startIndex, s.Length);
 
         public static float? ParseNullableSingle(string s, int startIndex, int length)
         {
@@ -808,11 +796,9 @@ namespace Halak
                 return null;  // overflow
         }
 
-        public static double ParseDouble(string s, double defaultValue = default(double))
-            => ParseDouble(s, 0, s.Length, defaultValue);
+        public static double ParseDouble(string s, double defaultValue = default(double)) => ParseDouble(s, 0, s.Length, defaultValue);
 
-        public static double ParseDouble(string s, int startIndex, double defaultValue = default(double))
-            => ParseDouble(s, startIndex, s.Length, defaultValue);
+        public static double ParseDouble(string s, int startIndex, double defaultValue = default(double)) => ParseDouble(s, startIndex, s.Length, defaultValue);
 
         public static double ParseDouble(string s, int startIndex, int length, double defaultValue = default(double))
         {
@@ -928,11 +914,9 @@ namespace Halak
                 return defaultValue;  // overflow
         }
 
-        public static double? ParseNullableDouble(string s)
-            => ParseNullableDouble(s, 0, s.Length);
+        public static double? ParseNullableDouble(string s) => ParseNullableDouble(s, 0, s.Length);
 
-        public static double? ParseNullableDouble(string s, int startIndex)
-            => ParseNullableDouble(s, startIndex, s.Length);
+        public static double? ParseNullableDouble(string s, int startIndex) => ParseNullableDouble(s, startIndex, s.Length);
 
         public static double? ParseNullableDouble(string s, int startIndex, int length)
         {
