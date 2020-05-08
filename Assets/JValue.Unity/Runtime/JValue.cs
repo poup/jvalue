@@ -121,7 +121,7 @@ namespace Halak
         #region Properties
 
         public int endIndex => startIndex + length - 1;
-        public JValue this[string key] => Get(key);
+        public JValue this[string key] => GetValue(key);
 
         #endregion
 
@@ -145,6 +145,10 @@ namespace Halak
         }
 
         public JValue(bool value) : this(value ? TrueLiteral : FalseLiteral, TypeCode.Boolean)
+        {
+        }
+
+        public JValue(byte value) : this(value.ToString(NumberFormatInfo.InvariantInfo), TypeCode.Number)
         {
         }
 
@@ -242,6 +246,17 @@ namespace Halak
             }
         }
 
+        public byte ToByte(byte defaultValue = 0)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Boolean: return ToBooleanCore() ? (byte)1 : (byte)0;
+                case TypeCode.Number:  return ToByteCore(defaultValue);
+                case TypeCode.String:  return ConvertForNumberParsing().ToByteCore(defaultValue);
+                default:               return defaultValue;
+            }
+        }
+
         public int ToInt32(int defaultValue = 0)
         {
             switch (typeCode)
@@ -253,11 +268,11 @@ namespace Halak
             }
         }
 
-        public long ToInt64(long defaultValue = 0)
+        public long ToInt64(long defaultValue = 0L)
         {
             switch (typeCode)
             {
-                case TypeCode.Boolean: return ToBooleanCore() ? 1 : 0;
+                case TypeCode.Boolean: return ToBooleanCore() ? 1L : 0L;
                 case TypeCode.Number:  return ToInt64Core(defaultValue);
                 case TypeCode.String:  return ConvertForNumberParsing().ToInt64Core(defaultValue);
                 default:               return defaultValue;
@@ -316,6 +331,10 @@ namespace Halak
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool ToBooleanCore()
             => source[startIndex] == 't';
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte ToByteCore(byte defaultValue)
+            => (byte)JNumber.ParseInt32(source, startIndex, defaultValue); // TODO
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int ToInt32Core(int defaultValue)
@@ -380,7 +399,7 @@ namespace Halak
 
         #region Get
 
-        private JValue Get(string key)
+        public JValue GetValue(string key)
         {
             if (typeCode == TypeCode.Object)
             {
@@ -715,23 +734,6 @@ namespace Halak
             }
         }
 
-        public bool Equals(string other)
-        {
-            if (other.Length != length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < length; ++i)
-            {
-                var j = i + startIndex;
-                if (source[j] != other[i])
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
 
         public bool EqualsPropertyName(string name)
         {
@@ -907,7 +909,9 @@ namespace Halak
                         return false;
                 }
                 else
+                {
                     return aStep == bStep;
+                }
             }
         }
 
@@ -917,13 +921,16 @@ namespace Halak
         #region Implicit Conversion
 
         public static implicit operator bool(JValue value) => value.ToBoolean();
+        public static implicit operator byte(JValue value) => value.ToByte();
         public static implicit operator int(JValue value) => value.ToInt32();
         public static implicit operator long(JValue value) => value.ToInt64();
         public static implicit operator float(JValue value) => value.ToSingle();
         public static implicit operator double(JValue value) => value.ToDouble();
         public static implicit operator decimal(JValue value) => value.ToDecimal();
         public static implicit operator string(JValue value) => value.ToUnescapedString();
+
         public static implicit operator JValue(bool value) => new JValue(value);
+        public static implicit operator JValue(byte value) => new JValue(value);
         public static implicit operator JValue(int value) => new JValue(value);
         public static implicit operator JValue(long value) => new JValue(value);
         public static implicit operator JValue(float value) => new JValue(value);
