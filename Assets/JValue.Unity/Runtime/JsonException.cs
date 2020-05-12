@@ -1,7 +1,9 @@
+using JetBrains.Annotations;
 using System;
 
 namespace Halak
 {
+    [PublicAPI]
     public class JsonException : Exception
     {
         public readonly string source;
@@ -12,7 +14,7 @@ namespace Halak
         {
         }
 
-        public JsonException(string message, string source, int index, int length) : base(message)
+        public JsonException(string message, string source, int index, int length) : base($"{message}\n{source.Substring(index, length)}")
         {
             this.source = source;
             this.index = index;
@@ -20,3 +22,4 @@ namespace Halak
         }
     }
 }
+

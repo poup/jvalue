@@ -96,7 +96,8 @@ namespace Halak
                 m_formatter.WriteValueSeparator(underlyingWriter);
                 needComma = false;
             }
-            underlyingWriter.Write(JValue.NullLiteral);
+
+            underlyingWriter.Write(JValue.nullArray);
             needComma = true;
         }
 
@@ -108,8 +109,20 @@ namespace Halak
                 m_formatter.WriteValueSeparator(underlyingWriter);
                 needComma = false;
             }
-            underlyingWriter.Write(value ? JValue.TrueLiteral : JValue.FalseLiteral);
+            underlyingWriter.Write(value ? JValue.trueArray : JValue.falseArray);
             needComma = true;
+        }
+
+        public void WriteValue(bool? value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+            }
+            else
+            {
+                WriteValue(value.Value);
+            }
         }
 
         public void WriteValue(char value)
@@ -123,6 +136,18 @@ namespace Halak
             needComma = true;
         }
 
+        public void WriteValue(char? value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+            }
+            else
+            {
+                WriteValue(value.Value);
+            }
+        }
+
         public void WriteValue(byte value)
         {
             if (needComma)
@@ -132,6 +157,18 @@ namespace Halak
             }
             underlyingWriter.Write(value);
             needComma = true;
+        }
+
+        public void WriteValue(byte? value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+            }
+            else
+            {
+                WriteValue(value.Value);
+            }
         }
 
         public void WriteValue(int value)
@@ -145,6 +182,18 @@ namespace Halak
             needComma = true;
         }
 
+        public void WriteValue(int? value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+            }
+            else
+            {
+                WriteValue(value.Value);
+            }
+        }
+
         public void WriteValue(long value)
         {
             if (needComma)
@@ -154,6 +203,18 @@ namespace Halak
             }
             underlyingWriter.WriteInt64(value);
             needComma = true;
+        }
+
+        public void WriteValue(long? value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+            }
+            else
+            {
+                WriteValue(value.Value);
+            }
         }
 
         public void WriteValue(float value)
@@ -167,6 +228,18 @@ namespace Halak
             needComma = true;
         }
 
+        public void WriteValue(float? value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+            }
+            else
+            {
+                WriteValue(value.Value);
+            }
+        }
+
         public void WriteValue(double value)
         {
             if (needComma)
@@ -178,6 +251,18 @@ namespace Halak
             needComma = true;
         }
 
+        public void WriteValue(double? value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+            }
+            else
+            {
+                WriteValue(value.Value);
+            }
+        }
+
         public void WriteValue(decimal value)
         {
             if (needComma)
@@ -187,6 +272,18 @@ namespace Halak
             }
             underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
             needComma = true;
+        }
+
+        public void WriteValue(decimal? value)
+        {
+            if (value == null)
+            {
+                WriteNull();
+            }
+            else
+            {
+                WriteValue(value.Value);
+            }
         }
 
         public void WriteValue(string value)
@@ -389,7 +486,7 @@ namespace Halak
         {
             if (value == null)
             {
-                writer.Write(JValue.NullLiteral);
+                writer.Write(JValue.nullArray);
                 return;
             }
             writer.Write('"');

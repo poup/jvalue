@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+using JetBrains.Annotations;
+using JetBrains.Rider.Unity.Editor;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -17,6 +18,11 @@ namespace Halak
     [PublicAPI]
     public readonly partial struct JValue : IComparable<JValue>, IEquatable<JValue>
     {
+        internal static readonly char[] nullArray = "null".ToCharArray();
+        internal static readonly char[] trueArray = "true".ToCharArray();
+        internal static readonly char[] falseArray = "false".ToCharArray();
+
+
         #region TypeCode
 
         public enum TypeCode
@@ -32,13 +38,29 @@ namespace Halak
 
         public static TypeCode ComputeTypeCode(string source, int index, int length)
         {
+            bool Equals(char[] array)
+            {
+                if (array.Length != length)
+                {
+                    return false;
+                }
+                for (int i = 0; i < length; ++i)
+                {
+                    if (source[index + i] != array[i])
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             if (source == null)
             {
                 return TypeCode.Null;
             }
 
-            var end = BackwardSkipWhitespaces(source, length - 1) + 1;
-            length = Math.Min(source.Length, end - index);
+            length = Math.Min(source.Length, length);
+            var end = index + length - 1;
 
             if (length <= 0)
             {
@@ -48,37 +70,37 @@ namespace Halak
             switch (source[index])
             {
                 case '"':
-                    if (length < 2 || source[length - 1] != '"')
+                    if (length < 2 || source[end] != '"')
                         throw new JsonException("string not closed", source, index, length);
 
                     return TypeCode.String;
 
                 case '[':
-                    if (length < 2 || source[length - 1] != ']')
+                    if (length < 2 || source[end] != ']')
                         throw new JsonException("array not closed", source, index, length);
 
                     return TypeCode.Array;
 
                 case '{':
-                    if (length < 2 || source[length - 1] != '}')
+                    if (length < 2 || source[end] != '}')
                         throw new JsonException("object not closed", source, index, length);
 
                     return TypeCode.Object;
 
                 case 't':
-                    if (length != 4 || source[index + 1] != 'r' || source[index + 2] != 'u' || source[index + 3] != 'e')
+                    if (!Equals(trueArray))
                         throw new JsonException("Illegal boolean: expect true", source, index, length);
 
                     return TypeCode.Boolean;
 
                 case 'f':
-                    if (length != 5 || source[index + 1] != 'a' || source[index + 2] != 'l' || source[index + 3] != 's' || source[index + 4] != 'e')
+                    if (!Equals(falseArray))
                         throw new JsonException("Illegal boolean: expect false", source, index, length);
 
                     return TypeCode.Boolean;
 
                 case 'n':
-                    if (length != 4 || source[index + 1] != 'u' || source[index + 2] != 'l' || source[index + 3] != 'l')
+                    if (!Equals(nullArray))
                         throw new JsonException("Illegal null: expect null", source, index, length);
 
                     return TypeCode.Null;
@@ -236,13 +258,53 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Null:    return defaultValue;
-                case TypeCode.Boolean: return ToBooleanCore();
-                case TypeCode.Number:  return ToDoubleCore(0.0) != 0.0;
-                case TypeCode.String:  return length != 2; // two quotation marks
-                case TypeCode.Array:   return true;
-                case TypeCode.Object:  return true;
-                default:               return defaultValue;
+                case TypeCode.Null:
+                    return defaultValue;
+
+                case TypeCode.Boolean:
+                    return ToBooleanCore();
+
+                case TypeCode.Number:
+                    return ToDoubleCore(0.0) != 0.0;
+
+                case TypeCode.String:
+                    return length != 2; // two quotation marks
+
+                case TypeCode.Array:
+                    return true;
+
+                case TypeCode.Object:
+                    return true;
+
+                default:
+                    return defaultValue;
+            }
+        }
+
+        public bool? ToNullableBoolean(bool? defaultValue = null)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Null:
+                    return null;
+
+                case TypeCode.Boolean:
+                    return ToBooleanCore();
+
+                case TypeCode.Number:
+                    return ToDoubleCore(0.0) != 0.0;
+
+                case TypeCode.String:
+                    return length != 2; // two quotation marks
+
+                case TypeCode.Array:
+                    return true;
+
+                case TypeCode.Object:
+                    return true;
+
+                default:
+                    return defaultValue;
             }
         }
 
@@ -250,10 +312,38 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Boolean: return ToBooleanCore() ? (byte)1 : (byte)0;
-                case TypeCode.Number:  return ToByteCore(defaultValue);
-                case TypeCode.String:  return ConvertForNumberParsing().ToByteCore(defaultValue);
-                default:               return defaultValue;
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? (byte)1 : (byte)0;
+
+                case TypeCode.Number:
+                    return ToByteCore(defaultValue);
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToByteCore(defaultValue);
+
+                default:
+                    return defaultValue;
+            }
+        }
+
+        public byte? ToNullableByte(byte? defaultValue = null)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Null:
+                    return null;
+
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? (byte)1 : (byte)0;
+
+                case TypeCode.Number:
+                    return ToByteCore(defaultValue.GetValueOrDefault(0));
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToByteCore(defaultValue.GetValueOrDefault(0));
+
+                default:
+                    return defaultValue;
             }
         }
 
@@ -261,10 +351,38 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Boolean: return ToBooleanCore() ? 1 : 0;
-                case TypeCode.Number:  return ToInt32Core(defaultValue);
-                case TypeCode.String:  return ConvertForNumberParsing().ToInt32Core(defaultValue);
-                default:               return defaultValue;
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1 : 0;
+
+                case TypeCode.Number:
+                    return ToInt32Core(defaultValue);
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToInt32Core(defaultValue);
+
+                default:
+                    return defaultValue;
+            }
+        }
+
+        public int? ToNullableInt32(int? defaultValue = null)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1 : 0;
+
+                case TypeCode.Number:
+                    return ToInt32Core(defaultValue.GetValueOrDefault(0));
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToInt32Core(defaultValue.GetValueOrDefault(0));
+
+                case TypeCode.Null:
+                    return null;
+
+                default:
+                    return defaultValue;
             }
         }
 
@@ -272,10 +390,38 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Boolean: return ToBooleanCore() ? 1L : 0L;
-                case TypeCode.Number:  return ToInt64Core(defaultValue);
-                case TypeCode.String:  return ConvertForNumberParsing().ToInt64Core(defaultValue);
-                default:               return defaultValue;
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1L : 0L;
+
+                case TypeCode.Number:
+                    return ToInt64Core(defaultValue);
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToInt64Core(defaultValue);
+
+                default:
+                    return defaultValue;
+            }
+        }
+
+        public long? ToNullableInt64(long? defaultValue = null)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1L : 0L;
+
+                case TypeCode.Number:
+                    return ToInt64Core(defaultValue.GetValueOrDefault(0L));
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToInt64Core(defaultValue.GetValueOrDefault(0L));
+
+                case TypeCode.Null:
+                    return null;
+
+                default:
+                    return defaultValue;
             }
         }
 
@@ -283,10 +429,38 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Boolean: return ToBooleanCore() ? 1 : 0;
-                case TypeCode.Number:  return ToSingleCore(defaultValue);
-                case TypeCode.String:  return ConvertForNumberParsing().ToSingleCore(defaultValue);
-                default:               return defaultValue;
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1 : 0;
+
+                case TypeCode.Number:
+                    return ToSingleCore(defaultValue);
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToSingleCore(defaultValue);
+
+                default:
+                    return defaultValue;
+            }
+        }
+
+        public float? ToNullableSingle(float? defaultValue = null)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1 : 0;
+
+                case TypeCode.Number:
+                    return ToSingleCore(defaultValue.GetValueOrDefault(0.0f));
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToSingleCore(defaultValue.GetValueOrDefault(0.0f));
+
+                case TypeCode.Null:
+                    return null;
+
+                default:
+                    return defaultValue;
             }
         }
 
@@ -294,10 +468,38 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Boolean: return ToBooleanCore() ? 1.0 : 0.0;
-                case TypeCode.Number:  return ToDoubleCore(defaultValue);
-                case TypeCode.String:  return ConvertForNumberParsing().ToDoubleCore(defaultValue);
-                default:               return defaultValue;
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1.0 : 0.0;
+
+                case TypeCode.Number:
+                    return ToDoubleCore(defaultValue);
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToDoubleCore(defaultValue);
+
+                default:
+                    return defaultValue;
+            }
+        }
+
+        public double? ToNullableDouble(double? defaultValue = 0.0)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1.0 : 0.0;
+
+                case TypeCode.Number:
+                    return ToDoubleCore(defaultValue.GetValueOrDefault(0.0));
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToDoubleCore(defaultValue.GetValueOrDefault(0.0));
+
+                case TypeCode.Null:
+                    return null;
+
+                default:
+                    return defaultValue;
             }
         }
 
@@ -305,10 +507,38 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Boolean: return ToBooleanCore() ? 1.0m : 0.0m;
-                case TypeCode.Number:  return ToDecimalCore(defaultValue);
-                case TypeCode.String:  return ConvertForNumberParsing().ToDecimalCore(defaultValue);
-                default:               return defaultValue;
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1.0m : 0.0m;
+
+                case TypeCode.Number:
+                    return ToDecimalCore(defaultValue);
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToDecimalCore(defaultValue);
+
+                default:
+                    return defaultValue;
+            }
+        }
+
+        public decimal? ToNullableDecimal(decimal? defaultValue = 0.0m)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? 1.0m : 0.0m;
+
+                case TypeCode.Number:
+                    return ToDecimalCore(defaultValue.GetValueOrDefault(0.0m));
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToDecimalCore(defaultValue.GetValueOrDefault(0.0m));
+
+                case TypeCode.Null:
+                    return null;
+
+                default:
+                    return defaultValue;
             }
         }
 
@@ -321,10 +551,17 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Boolean: return ToBooleanCore() ? JNumber.One : JNumber.Zero;
-                case TypeCode.Number:  return ToNumberCore(defaultValue);
-                case TypeCode.String:  return ConvertForNumberParsing().ToNumberCore(defaultValue);
-                default:               return JNumber.NaN;
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? JNumber.One : JNumber.Zero;
+
+                case TypeCode.Number:
+                    return ToNumberCore(defaultValue);
+
+                case TypeCode.String:
+                    return ConvertForNumberParsing().ToNumberCore(defaultValue);
+
+                default:
+                    return JNumber.NaN;
             }
         }
 
@@ -360,14 +597,27 @@ namespace Halak
         private JNumber ToNumberCore(JNumber defaultValue)
             => JNumber.TryParse(source, startIndex, out var value) ? value : defaultValue;
 
+        public string ToPropertyName()
+        {
+            Assert.IsTrue(typeCode == TypeCode.String);
+            return source.Substring(startIndex + 1, length - 2);
+        }
+
         public string ToUnescapedString(string defaultValue = "")
         {
             switch (typeCode)
             {
-                case TypeCode.Boolean: return ToBooleanCore() ? TrueLiteral : FalseLiteral;
-                case TypeCode.Number:  return source.Substring(startIndex, length);
-                case TypeCode.String:  return ToUnescapedStringCore();
-                default:               return defaultValue;
+                case TypeCode.Boolean:
+                    return ToBooleanCore() ? TrueLiteral : FalseLiteral;
+
+                case TypeCode.Number:
+                    return source.Substring(startIndex, length);
+
+                case TypeCode.String:
+                    return ToUnescapedStringCore();
+
+                default:
+                    return defaultValue;
             }
         }
 
@@ -416,7 +666,7 @@ namespace Halak
         }
 
 
-        private int GetElementCount()
+        public int GetElementCount()
         {
             Assert.IsTrue(typeCode == TypeCode.Array || typeCode == TypeCode.Object);
 
@@ -489,13 +739,15 @@ namespace Halak
 
             switch (source[index])
             {
-                case '"': return SkipString(index);
+                case '"':
+                    return SkipString(index);
 
                 case '[':
                 case '{':
                     return SkipBracket(index);
 
-                default: return SkipLetterOrDigit(index);
+                default:
+                    return SkipLetterOrDigit(index);
             }
         }
 
@@ -526,7 +778,8 @@ namespace Halak
                     case '\n':
                         break;
 
-                    default: return index;
+                    default:
+                        return index;
                 }
             }
 
@@ -545,7 +798,8 @@ namespace Halak
                     case '\n':
                         break;
 
-                    default: return index;
+                    default:
+                        return index;
                 }
             }
 
@@ -585,7 +839,8 @@ namespace Halak
             {
                 switch (source[index])
                 {
-                    case '"': return index + 1;
+                    case '"':
+                        return index + 1;
 
                     case '\\':
                         index++;
@@ -724,13 +979,26 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Null:    return 0;
-                case TypeCode.Boolean: return ToBoolean() ? 0x392307A6 : 0x63D95114;
-                case TypeCode.Number:  return ToNumber().GetHashCode();
-                case TypeCode.String:  return GetStringHashCode();
-                case TypeCode.Array:   return GetArrayHashCode();
-                case TypeCode.Object:  return GetObjectHashCode();
-                default:               return 0;
+                case TypeCode.Null:
+                    return 0;
+
+                case TypeCode.Boolean:
+                    return ToBoolean() ? 0x392307A6 : 0x63D95114;
+
+                case TypeCode.Number:
+                    return ToNumber().GetHashCode();
+
+                case TypeCode.String:
+                    return GetStringHashCode();
+
+                case TypeCode.Array:
+                    return GetArrayHashCode();
+
+                case TypeCode.Object:
+                    return GetObjectHashCode();
+
+                default:
+                    return 0;
             }
         }
 
@@ -745,19 +1013,12 @@ namespace Halak
                 return false;
             }
 
-            int i = 0;
-            var keyWithoutQuotes = new JValue(source, startIndex + 1, length - 2);
-            foreach (var c in keyWithoutQuotes.GetCharEnumerator())
+            for (int i = 0; i < nameLength; ++i)
             {
-                if (i >= nameLength)
+                if (name[i] != source[startIndex + i + 1])
                 {
                     return false;
                 }
-                if (c != name[i])
-                {
-                    return false;
-                }
-                ++i;
             }
 
             return true;
@@ -827,12 +1088,23 @@ namespace Halak
             {
                 switch (leftType)
                 {
-                    case TypeCode.Null:    return true;
-                    case TypeCode.Boolean: return left.ToBooleanCore() == right.ToBooleanCore();
-                    case TypeCode.Number:  return JNumber.Equals(left.ToNumberCore(JNumber.NaN), right.ToNumberCore(JNumber.NaN));
-                    case TypeCode.String:  return EqualsString(left, right);
-                    case TypeCode.Array:   return SequenceEqual<JValue, ArrayEnumerator>(left.GetArrayItems(), right.GetArrayItems(), Equals);
-                    case TypeCode.Object:  return SequenceEqual<KeyValuePair<JValue, JValue>, ObjectKeyValueEnumerator>(left.GetObjectKeyValues(), right.GetObjectKeyValues(), EqualsMember);
+                    case TypeCode.Null:
+                        return true;
+
+                    case TypeCode.Boolean:
+                        return left.ToBooleanCore() == right.ToBooleanCore();
+
+                    case TypeCode.Number:
+                        return JNumber.Equals(left.ToNumberCore(JNumber.NaN), right.ToNumberCore(JNumber.NaN));
+
+                    case TypeCode.String:
+                        return EqualsString(left, right);
+
+                    case TypeCode.Array:
+                        return SequenceEqual<JValue, ArrayEnumerator>(left.GetArrayItems(), right.GetArrayItems(), Equals);
+
+                    case TypeCode.Object:
+                        return SequenceEqual<KeyValuePair, ObjectKeyValueEnumerator>(left.GetObjectKeyValues(), right.GetObjectKeyValues(), EqualsMember);
                 }
             }
 
@@ -847,19 +1119,32 @@ namespace Halak
             {
                 switch (leftType)
                 {
-                    case TypeCode.Null:    return 0;
-                    case TypeCode.Boolean: return left.ToBooleanCore().CompareTo(right.ToBooleanCore());
-                    case TypeCode.Number:  return JNumber.Compare(left.ToNumberCore(JNumber.NaN), right.ToNumberCore(JNumber.NaN));
-                    case TypeCode.String:  return SequenceCompare<char, CharEnumerator>(left.GetCharEnumerator(), right.GetCharEnumerator(), (x, y) => x.CompareTo(y));
-                    case TypeCode.Array:   return SequenceCompare(left.GetArrayItems(), right.GetArrayItems(), Compare);
-                    case TypeCode.Object:  return SequenceCompare(left.GetObjectKeyValues().GetEnumerator(), right.GetObjectKeyValues(), CompareMember);
-                    default:               return 0;
+                    case TypeCode.Null:
+                        return 0;
+
+                    case TypeCode.Boolean:
+                        return left.ToBooleanCore().CompareTo(right.ToBooleanCore());
+
+                    case TypeCode.Number:
+                        return JNumber.Compare(left.ToNumberCore(JNumber.NaN), right.ToNumberCore(JNumber.NaN));
+
+                    case TypeCode.String:
+                        return SequenceCompare<char, CharEnumerator>(left.GetCharEnumerator(), right.GetCharEnumerator(), (x, y) => x.CompareTo(y));
+
+                    case TypeCode.Array:
+                        return SequenceCompare(left.GetArrayItems(), right.GetArrayItems(), Compare);
+
+                    case TypeCode.Object:
+                        return SequenceCompare(left.GetObjectKeyValues().GetEnumerator(), right.GetObjectKeyValues(), CompareMember);
+
+                    default:
+                        return 0;
                 }
             }
             return ((int)leftType).CompareTo((int)rightType);
         }
 
-        private static int CompareMember(KeyValuePair<JValue, JValue> x, KeyValuePair<JValue, JValue> y)
+        private static int CompareMember(KeyValuePair x, KeyValuePair y)
         {
             var k = Compare(x.Key, y.Key);
             if (k != 0)
@@ -895,7 +1180,7 @@ namespace Halak
 
         private static bool EqualsString(JValue a, JValue b) => SequenceEqual<char, CharEnumerator>(a.GetCharEnumerator(), b.GetCharEnumerator(), (x, y) => x == y);
 
-        private static bool EqualsMember(KeyValuePair<JValue, JValue> x, KeyValuePair<JValue, JValue> y) => Equals(x.Key, y.Key) && Equals(x.Value, y.Value);
+        private static bool EqualsMember(KeyValuePair x, KeyValuePair y) => Equals(x.Key, y.Key) && Equals(x.Value, y.Value);
 
         private static bool SequenceEqual<T, TEnumerator>(TEnumerator a, TEnumerator b, Func<T, T, bool> equals) where TEnumerator : IEnumerator<T>
         {
@@ -923,6 +1208,7 @@ namespace Halak
         public static implicit operator bool(JValue value) => value.ToBoolean();
         public static implicit operator byte(JValue value) => value.ToByte();
         public static implicit operator int(JValue value) => value.ToInt32();
+        public static implicit operator int?(JValue value) => value.ToNullableInt32();
         public static implicit operator long(JValue value) => value.ToInt64();
         public static implicit operator float(JValue value) => value.ToSingle();
         public static implicit operator double(JValue value) => value.ToDouble();

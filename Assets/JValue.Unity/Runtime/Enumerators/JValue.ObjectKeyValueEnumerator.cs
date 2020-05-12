@@ -1,21 +1,39 @@
 using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine.Assertions;
 
 namespace Halak
 {
     public readonly partial struct JValue
     {
-        public struct ObjectKeyValueEnumerator : IEnumerator<KeyValuePair<JValue, JValue>>
+        public readonly struct KeyValuePair
+        {
+            public readonly JValue Key;
+            public readonly JValue Value;
+
+            public KeyValuePair(JValue key, JValue value)
+            {
+                this.Key = key;
+                this.Value = value;
+            }
+
+            public override string ToString()
+            {
+                return $"[{Key.ToString()}, {Value.ToString()}]";
+            }
+        }
+
+        public struct ObjectKeyValueEnumerator : IEnumerator<KeyValuePair>
         {
             private readonly JValue m_source;
             private readonly int m_endIndex;
 
             private int m_nextIndex;
-            private KeyValuePair<JValue, JValue> m_current;
+            private KeyValuePair m_current;
 
-            public KeyValuePair<JValue, JValue> Current => m_current;
+            public KeyValuePair Current => m_current;
             object IEnumerator.Current => m_current;
 
             internal ObjectKeyValueEnumerator(JValue value)
@@ -23,9 +41,9 @@ namespace Halak
                 Assert.IsTrue(value.typeCode == TypeCode.Object);
 
                 m_source = value;
-                m_endIndex = value.startIndex + value.length - 1;
+                m_endIndex = value.startIndex + value.length - 2;
 
-                m_nextIndex = value.SkipWhitespaces(value.startIndex);
+                m_nextIndex = value.SkipWhitespaces(value.startIndex+1);
                 m_current = default;
             }
 
@@ -50,7 +68,7 @@ namespace Halak
 
                 var sourceString = source.source;
 
-                if (sourceString[keyStart] != '"' || sourceString[keyEnd] != '"')
+                if (sourceString[keyStart] != '"' || sourceString[keyEnd-1] != '"')
                 {
                     throw new JsonException("expected property name (quoted string)", sourceString, keyStart, keyEnd-keyStart);
                 }
@@ -58,8 +76,8 @@ namespace Halak
                 var valueStart = source.SkipWhitespaces(keyEnd + 1);
                 var valueEnd = source.SkipValue(valueStart);
 
-                m_current = new KeyValuePair<JValue, JValue>(
-                    new JValue(sourceString, keyStart, keyEnd - keyStart),
+                m_current = new KeyValuePair(
+                    new JValue(sourceString, keyStart+1, keyEnd - keyStart),
                     new JValue(sourceString, valueStart, valueEnd - valueStart)
                 );
 
@@ -69,7 +87,7 @@ namespace Halak
 
             public void Reset()
             {
-                m_nextIndex = m_source.SkipWhitespaces(m_source.startIndex);
+                m_nextIndex = m_source.SkipWhitespaces(m_source.startIndex+1);
                 m_current = default;
             }
 
