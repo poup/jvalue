@@ -41,7 +41,7 @@ namespace Halak
                 Assert.IsTrue(value.typeCode == TypeCode.Object);
 
                 m_source = value;
-                m_endIndex = value.startIndex + value.length - 2;
+                m_endIndex = value.startIndex + value.length - 1;
 
                 m_nextIndex = value.SkipWhitespaces(value.startIndex+1);
                 m_current = default;
@@ -77,7 +77,7 @@ namespace Halak
                 var valueEnd = source.SkipValue(valueStart);
 
                 m_current = new KeyValuePair(
-                    new JValue(sourceString, keyStart+1, keyEnd - keyStart),
+                    new JValue(sourceString, keyStart, keyEnd - keyStart),
                     new JValue(sourceString, valueStart, valueEnd - valueStart)
                 );
 

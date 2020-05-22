@@ -22,9 +22,9 @@ namespace Halak
             {
                 Assert.IsTrue(value.typeCode == TypeCode.Array);
                 m_source = value;
-                m_endIndex = value.startIndex + value.length - 2;
+                m_endIndex = value.startIndex + value.length-1;
 
-                m_nextIndex = value.SkipWhitespaces(value.startIndex+1);
+                m_nextIndex = value.SkipWhitespaces(value.startIndex);
                 m_current = default;
             }
 
