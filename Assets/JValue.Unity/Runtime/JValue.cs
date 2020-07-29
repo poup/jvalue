@@ -240,7 +240,7 @@ namespace Halak
         {
         }
 
-        private JValue(string source, int startIndex, int length, TypeCode typeCode)
+        internal JValue(string source, int startIndex, int length, TypeCode typeCode)
         {
             this.source = source;
             this.startIndex = startIndex;

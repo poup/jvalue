@@ -343,7 +343,7 @@ namespace Halak
         public JValue BuildJson()
         {
             var txt = m_underlyingWriter.ToString();
-            return new JValue(txt, 0, txt.Length);
+            return new JValue(txt, 0, txt.Length, JValue.TypeCode.String);
         }
     }
 

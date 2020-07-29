@@ -246,5 +246,40 @@ namespace Halak.Tests
             var expected = "\"v1\":\"toto\",\"v2\":10";
             Assert.AreEqual(expected, result);
         }
+
+        [Test]
+        public void JsonWriter_BuildJValue()
+        {
+            var sb = new StringBuilder();
+            var writer = new JsonWriter(sb);
+            writer.SetFormatter(JsonWriter.Formatter.compact);
+
+            writer.WritePropertyName("object");
+            writer.WriteStartObject();
+
+            writer.WritePropertyName("int1");
+            writer.WriteValue(10);
+
+            writer.WritePropertyName("array");
+            writer.WriteStartArray();
+            writer.WriteValue(10);
+            writer.WriteValue(20);
+            writer.WriteValue(30);
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+
+            var jvalue = writer.BuildJson();
+
+            var result = Write(w =>
+            {
+                w.WritePropertyName("v1");
+                w.WriteStartObject();
+                w.WriteValue(jvalue);
+                w.WriteEndObject();
+            });
+
+            var expected = "\"v1\":{\"object\":{\"int1\":10,\"array\":[10,20,30]}}";
+            Assert.AreEqual(expected, result);
+        }
     }
 }
