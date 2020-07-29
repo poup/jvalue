@@ -1,7 +1,6 @@
-using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 
 namespace Halak
@@ -43,7 +42,7 @@ namespace Halak
                 m_source = value;
                 m_endIndex = value.startIndex + value.length - 1;
 
-                m_nextIndex = value.SkipWhitespaces(value.startIndex+1);
+                m_nextIndex = value.SkipWhitespaces(value.startIndex + 1);
                 m_current = default;
             }
 
@@ -68,17 +67,18 @@ namespace Halak
 
                 var sourceString = source.source;
 
-                if (sourceString[keyStart] != '"' || sourceString[keyEnd-1] != '"')
+                if (sourceString[keyStart] != '"' || sourceString[keyEnd - 1] != '"')
                 {
-                    throw new JsonException("expected property name (quoted string)", sourceString, keyStart, keyEnd-keyStart);
+                    throw new JsonException("expected property name (quoted string)", sourceString, keyStart, keyEnd - keyStart);
                 }
 
                 var valueStart = source.SkipWhitespaces(keyEnd + 1);
                 var valueEnd = source.SkipValue(valueStart);
+                int end = BackwardSkipWhitespaces(source.source, valueEnd);
 
                 m_current = new KeyValuePair(
-                    new JValue(sourceString, keyStart, keyEnd - keyStart),
-                    new JValue(sourceString, valueStart, valueEnd - valueStart)
+                    new JValue(sourceString, keyStart + 1, keyEnd - keyStart - 2, TypeCode.String),
+                    new JValue(sourceString, valueStart, end - valueStart)
                 );
 
                 m_nextIndex = source.SkipWhitespaces(valueEnd + 1);
@@ -87,7 +87,7 @@ namespace Halak
 
             public void Reset()
             {
-                m_nextIndex = m_source.SkipWhitespaces(m_source.startIndex+1);
+                m_nextIndex = m_source.SkipWhitespaces(m_source.startIndex + 1);
                 m_current = default;
             }
 
@@ -100,8 +100,9 @@ namespace Halak
                 var dictionary = new Dictionary<string, JValue>();
                 foreach (var pair in this)
                 {
-                    dictionary[pair.Key.ToString()] = pair.Value;
+                    dictionary[pair.Key.ToPropertyName()] = pair.Value;
                 }
+
                 return dictionary;
             }
         }

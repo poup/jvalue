@@ -4,24 +4,24 @@ using NUnit.Framework;
 
 namespace Halak.Tests.Enumerators
 {
-    public class ArrayEnumeratorTest
+    public class CharEnumeratorTest
     {
-        private static IReadOnlyList<JValue> GetItems(string json, string propertyName)
+        private static IReadOnlyList<char> GetItems(string json, string propertyName)
         {
             JValue jvalue = JValue.Parse(json);
-            return jvalue.GetValue(propertyName).GetArrayItems().ToList();
+            return jvalue.GetValue(propertyName).GetCharEnumerator().ToList();
         }
         
         [Test]
-        public void ArrayEnumeratorShouldReturnNothingWithEmpty()
+        public void CharEnumeratorShouldReturnNothingWithEmpty()
         {
-            string json = "{ \"test\": [] }";
+            string json = "{ \"test\": \"\" }";
             var result = GetItems(json, "test");
             Assert.IsTrue(result.Count == 0);
         }
         
         [Test]
-        public void ArrayEnumeratorShouldReturnNothingWithNonExisting()
+        public void CharEnumeratorShouldReturnNothingWithNonExisting()
         {
             string json = "{}";
             var result = GetItems(json, "test");
@@ -29,24 +29,12 @@ namespace Halak.Tests.Enumerators
         }
         
         [Test]
-        public void ArrayEnumeratorShouldReturnItems()
+        public void CharEnumeratorShouldReturnItems()
         {
             string json = "{ \"test\": [1,2,3] }";
             var result = GetItems(json, "test").ToArray();
-            Assert.Contains(new [] {new JValue(1), new JValue(2), new JValue(3)}, result);
-        }
-        
-        [Test]
-        public void ArrayEnumeratorShouldReturnItems2()
-        {
-            string json = "{ \"test\": [1,2,3] }";
-            var result = GetItems(json, "test")
-                .Select(v => v.ToInt32())
-                .ToArray();
-            
-            Assert.Contains(new [] {1, 2, 3}, result);
+            Assert.Contains(new [] { '[', '1', ',', '2', ',', '3', ']'}, result);
         }
 
-        
     }
 }

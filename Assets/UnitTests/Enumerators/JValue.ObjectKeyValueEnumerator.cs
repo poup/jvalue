@@ -1,39 +1,52 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Halak.Tests.Enumerators
 {
-    public class CharEnumeratorTest
+    public class ObjectKeyValueEnumeratorTest
     {
-        private static IReadOnlyList<char> GetItems(string json, string propertyName)
+        private static Dictionary<string, JValue> GetItems(string json)
         {
             JValue jvalue = JValue.Parse(json);
-            return jvalue.GetValue(propertyName).GetCharEnumerator().ToList();
+            return jvalue.GetObjectKeyValues().ToDictionary();
         }
         
         [Test]
-        public void CharEnumeratorShouldReturnNothingWithEmpty()
-        {
-            string json = "{ \"test\": \"\" }";
-            var result = GetItems(json, "test");
-            Assert.IsTrue(result.Count == 0);
-        }
-        
-        [Test]
-        public void CharEnumeratorShouldReturnNothingWithNonExisting()
+        public void ObjectKeyValueEnumeratorShouldReturnNothingWithEmpty()
         {
             string json = "{}";
-            var result = GetItems(json, "test");
+            var result = GetItems(json);
             Assert.IsTrue(result.Count == 0);
         }
         
         [Test]
-        public void CharEnumeratorShouldReturnItems()
+        public void ObjectKeyValueEnumeratorShouldReturnItems()
         {
-            string json = "{ \"test\": [1,2,3] }";
-            var result = GetItems(json, "test").ToArray();
-            Assert.Contains(new [] { '[', '1', ',', '2', ',', '3', ']'}, result);
+            string json = "{ " +
+                          "\"test1\": 1," +
+                          "\"test2\": 2" +
+                          " }";
+            var result = GetItems(json);
+            
+            Assert.IsTrue(result.Count == 2);
+            Assert.AreEqual(1, result["test1"].ToInt32());
+            Assert.AreEqual(2, result["test2"].ToInt32());
+        }  
+        
+        [Test]
+        public void ObjectKeyValueEnumeratorShouldReturnItems2()
+        {
+            string json = "{ " +
+                          "\"test1\": 1,\"tr\",12," +
+                          "\"test2\": 2" +
+                          " }";
+            var result = GetItems(json);
+            
+            Assert.IsTrue(result.Count == 2);
+            Assert.AreEqual(1, result["test1"].ToInt32());
+            Assert.AreEqual(2, result["test2"].ToInt32());
         }
 
     }

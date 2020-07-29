@@ -106,6 +106,18 @@ namespace Halak
             public void Dispose()
             {
             }
+            
+
+            public IReadOnlyList<char> ToList()
+            {
+                List<char> result = new List<char>();
+                foreach (var item in this)
+                {
+                    result.Add(item);
+                }
+
+                return result;
+            }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static int Hex(char c)

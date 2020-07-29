@@ -46,7 +46,8 @@ namespace Halak
                 var source = m_source;
 
                 int currentEnd = source.SkipValue(m_nextIndex);
-                m_current = new JValue(source.source, m_nextIndex, currentEnd - m_nextIndex);
+                int end = BackwardSkipWhitespaces(source.source, currentEnd);
+                m_current = new JValue(source.source, m_nextIndex, end - m_nextIndex);
 
                 m_nextIndex = source.SkipWhitespaces(currentEnd + 1);
                 return true;
@@ -54,12 +55,23 @@ namespace Halak
 
             public void Reset()
             {
-                m_nextIndex = m_source.SkipWhitespaces(m_source.startIndex+1);
+                m_nextIndex = m_source.SkipWhitespaces(m_source.startIndex);
                 m_current = default;
             }
 
             public void Dispose()
             {
+            }
+            
+            public IReadOnlyList<JValue> ToList()
+            {
+                List<JValue> result = new List<JValue>();
+                foreach (JValue item in this)
+                {
+                    result.Add(item);
+                }
+
+                return result;
             }
         }
     }
