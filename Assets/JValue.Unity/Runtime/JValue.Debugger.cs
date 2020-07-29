@@ -11,16 +11,7 @@ namespace Halak
 
         private string ToDebuggerType()
         {
-            switch (typeCode)
-            {
-                case TypeCode.Null:    return "JValue.Null";
-                case TypeCode.Boolean: return "JValue.Boolean";
-                case TypeCode.Number:  return "JValue.Number";
-                case TypeCode.String:  return "JValue.String";
-                case TypeCode.Array:   return "JValue.Array";
-                case TypeCode.Object:  return "JValue.Object";
-                default:               return "JValue.Null";
-            }
+            return typeCode.ToString();
         }
 
         private string ToDebuggerDisplay()

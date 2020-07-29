@@ -96,7 +96,7 @@ namespace Halak
             }
         }
 
-        private sealed  class PrettyFormatter : Formatter
+        private sealed class PrettyFormatter : Formatter
         {
             private int depth;
 

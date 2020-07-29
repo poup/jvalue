@@ -1,11 +1,10 @@
-using JetBrains.Annotations;
-using JetBrains.Rider.Unity.Editor;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using JetBrains.Annotations;
 using UnityEngine.Assertions;
 
 namespace Halak
@@ -27,16 +26,17 @@ namespace Halak
 
         public enum TypeCode
         {
+            Invalid,
             Null,
             Boolean,
             Number,
             String,
             Array,
-            Object,
+            Object
         }
 
 
-        public static TypeCode ComputeTypeCode(string source, int index, int length)
+        private static TypeCode ComputeTypeCode(string source, int index, int length)
         {
             bool Equals(char[] array)
             {
@@ -44,6 +44,7 @@ namespace Halak
                 {
                     return false;
                 }
+
                 for (int i = 0; i < length; ++i)
                 {
                     if (source[index + i] != array[i])
@@ -51,6 +52,7 @@ namespace Halak
                         return false;
                     }
                 }
+
                 return true;
             }
 
@@ -106,7 +108,12 @@ namespace Halak
                     return TypeCode.Null;
 
                 default:
-                    // TODO checker is a number ?
+                    for (int i = index; i < index + length; ++i)
+                    {
+                        if (source[i] < '0' || source[i] > '9')
+                            throw new JsonException("Illegal number", source, index, length);
+                    }
+
                     return TypeCode.Number;
             }
         }
@@ -143,15 +150,8 @@ namespace Halak
         #region Properties
 
         public int endIndex => startIndex + length - 1;
-        public JValue this[string key] => GetValue(key);
 
         #endregion
-
-
-        #region Indexer
-
-        #endregion
-
 
         #region Constructors
 
@@ -159,10 +159,12 @@ namespace Halak
         {
             if (source != null)
             {
-                var index = SkipWhitespaces(source);
-                var end = BackwardSkipWhitespaces(source, source.Length - 1) + 1;
+                int length = source.Length;
+                int index = SkipWhitespaces(source, 0, length);
+                int end = BackwardSkipWhitespaces(source, length - 1) + 1;
                 return new JValue(source, index, end - index);
             }
+
             return Null;
         }
 
@@ -231,6 +233,7 @@ namespace Halak
 
         private JValue(string source, TypeCode typeCode) : this(source, 0, source.Length, typeCode)
         {
+            Assert.IsTrue(typeCode == ComputeTypeCode(source, startIndex, length));
         }
 
         private JValue(JValue original) : this(original.source, original.startIndex, original.length, original.typeCode)
@@ -243,8 +246,6 @@ namespace Halak
             this.startIndex = startIndex;
             this.length = length;
             this.typeCode = typeCode;
-
-            Assert.IsTrue(typeCode == ComputeTypeCode(source, startIndex, length));
         }
 
         #endregion
@@ -313,7 +314,7 @@ namespace Halak
             switch (typeCode)
             {
                 case TypeCode.Boolean:
-                    return ToBooleanCore() ? (byte)1 : (byte)0;
+                    return ToBooleanCore() ? (byte) 1 : (byte) 0;
 
                 case TypeCode.Number:
                     return ToByteCore(defaultValue);
@@ -334,7 +335,7 @@ namespace Halak
                     return null;
 
                 case TypeCode.Boolean:
-                    return ToBooleanCore() ? (byte)1 : (byte)0;
+                    return ToBooleanCore() ? (byte) 1 : (byte) 0;
 
                 case TypeCode.Number:
                     return ToByteCore(defaultValue.GetValueOrDefault(0));
@@ -571,7 +572,7 @@ namespace Halak
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private byte ToByteCore(byte defaultValue)
-            => (byte)JNumber.ParseInt32(source, startIndex, defaultValue); // TODO
+            => (byte) JNumber.ParseInt32(source, startIndex, defaultValue); // TODO
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int ToInt32Core(int defaultValue)
@@ -629,6 +630,7 @@ namespace Halak
             {
                 sb.Append(enumerator.Current);
             }
+
             return sb.ToString();
         }
 
@@ -664,7 +666,6 @@ namespace Halak
 
             return Null;
         }
-
 
         public int GetElementCount()
         {
@@ -757,11 +758,6 @@ namespace Halak
             return SkipWhitespaces(source, index, startIndex + length);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int SkipWhitespaces(string source)
-        {
-            return SkipWhitespaces(source, 0, source.Length);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int SkipWhitespaces(string source, int index, int end)
@@ -771,8 +767,6 @@ namespace Halak
                 switch (source[index])
                 {
                     case ' ':
-                    case ':':
-                    case ',':
                     case '\t':
                     case '\r':
                     case '\n':
@@ -787,7 +781,7 @@ namespace Halak
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int BackwardSkipWhitespaces(string source, int index)
+        internal static int BackwardSkipWhitespaces(string source, int index)
         {
             for (; index >= 0; index--)
             {
@@ -847,9 +841,8 @@ namespace Halak
                         break;
                 }
             }
-            throw new JsonException($"string not closed", this);
 
-            return end;
+            throw new JsonException($"string not closed", this);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -885,6 +878,7 @@ namespace Halak
             {
                 throw new JsonException($"{typeCode} not closed", this);
             }
+
             return end;
         }
 
@@ -912,22 +906,6 @@ namespace Halak
         }
 
         public void Serialize(JsonWriter writer) => Serialize(writer, this);
-
-        internal void WriteTo(JsonWriter writer)
-        {
-            if (typeCode != TypeCode.Null)
-            {
-                var end = startIndex + length;
-                for (var i = startIndex; i < end; i++)
-                {
-                    writer.WriteValue(source[i]);
-                }
-            }
-            else
-            {
-                writer.WriteNull();
-            }
-        }
 
         private static void Serialize(JsonWriter writer, JValue value)
         {
@@ -965,6 +943,7 @@ namespace Halak
 
             foreach (var pair in value)
             {
+                Assert.AreEqual(TypeCode.String, pair.Key.typeCode);
                 writer.WritePropertyName(pair.Key);
                 Serialize(writer, pair.Value);
             }
@@ -979,43 +958,31 @@ namespace Halak
         {
             switch (typeCode)
             {
-                case TypeCode.Null:
-                    return 0;
-
-                case TypeCode.Boolean:
-                    return ToBoolean() ? 0x392307A6 : 0x63D95114;
-
-                case TypeCode.Number:
-                    return ToNumber().GetHashCode();
-
-                case TypeCode.String:
-                    return GetStringHashCode();
-
-                case TypeCode.Array:
-                    return GetArrayHashCode();
-
-                case TypeCode.Object:
-                    return GetObjectHashCode();
-
-                default:
-                    return 0;
+                case TypeCode.Null: return 0;
+                case TypeCode.Boolean: return ToBoolean() ? 0x392307A6 : 0x63D95114;
+                case TypeCode.Number: return ToNumber().GetHashCode();
+                case TypeCode.String: return GetStringHashCode();
+                case TypeCode.Array: return GetArrayHashCode();
+                case TypeCode.Object: return GetObjectHashCode();
+                default: return 0;
             }
         }
 
 
-        public bool EqualsPropertyName(string name)
+        private bool EqualsPropertyName(string name)
         {
             Assert.IsTrue(typeCode == TypeCode.String);
-
+            
             var nameLength = name.Length;
             if (nameLength > length - 2)
             {
                 return false;
             }
 
+            var offset = startIndex + 1;
             for (int i = 0; i < nameLength; ++i)
             {
-                if (name[i] != source[startIndex + i + 1])
+                if (name[i] != source[offset + i])
                 {
                     return false;
                 }
@@ -1049,6 +1016,7 @@ namespace Halak
             {
                 hashCode = HashCode.Combine(hashCode, enumerator.Current);
             }
+
             return hashCode;
         }
 
@@ -1061,6 +1029,7 @@ namespace Halak
             {
                 hashCode = HashCode.Combine(hashCode, element.GetHashCode());
             }
+
             return hashCode;
         }
 
@@ -1074,11 +1043,11 @@ namespace Halak
                 hashCode = HashCode.Combine(hashCode, member.Key.GetHashCode());
                 hashCode = HashCode.Combine(hashCode, member.Value.GetHashCode());
             }
+
             return hashCode;
         }
 
         #endregion
-
 
         public static bool Equals(JValue left, JValue right)
         {
@@ -1141,7 +1110,8 @@ namespace Halak
                         return 0;
                 }
             }
-            return ((int)leftType).CompareTo((int)rightType);
+
+            return ((int) leftType).CompareTo((int) rightType);
         }
 
         private static int CompareMember(KeyValuePair x, KeyValuePair y)
@@ -1178,7 +1148,7 @@ namespace Halak
             }
         }
 
-        private static bool EqualsString(JValue a, JValue b) => SequenceEqual<char, CharEnumerator>(a.GetCharEnumerator(), b.GetCharEnumerator(), (x, y) => x == y);
+        private static bool EqualsString(in JValue a, in JValue b) => SequenceEqual<char, CharEnumerator>(a.GetCharEnumerator(), b.GetCharEnumerator(), (x, y) => x == y);
 
         private static bool EqualsMember(KeyValuePair x, KeyValuePair y) => Equals(x.Key, y.Key) && Equals(x.Value, y.Value);
 
@@ -1190,7 +1160,7 @@ namespace Halak
                 var bStep = b.MoveNext();
                 if (aStep && bStep)
                 {
-                    if (equals(a.Current, b.Current) == false)
+                    if (!equals(a.Current, b.Current))
                         return false;
                 }
                 else
@@ -1202,39 +1172,39 @@ namespace Halak
 
         #endregion
 
-
-        #region Implicit Conversion
-
-        public static implicit operator bool(JValue value) => value.ToBoolean();
-        public static implicit operator byte(JValue value) => value.ToByte();
-        public static implicit operator int(JValue value) => value.ToInt32();
-        public static implicit operator int?(JValue value) => value.ToNullableInt32();
-        public static implicit operator long(JValue value) => value.ToInt64();
-        public static implicit operator float(JValue value) => value.ToSingle();
-        public static implicit operator double(JValue value) => value.ToDouble();
-        public static implicit operator decimal(JValue value) => value.ToDecimal();
-        public static implicit operator string(JValue value) => value.ToUnescapedString();
-
-        public static implicit operator JValue(bool value) => new JValue(value);
-        public static implicit operator JValue(byte value) => new JValue(value);
-        public static implicit operator JValue(int value) => new JValue(value);
-        public static implicit operator JValue(long value) => new JValue(value);
-        public static implicit operator JValue(float value) => new JValue(value);
-        public static implicit operator JValue(double value) => new JValue(value);
-        public static implicit operator JValue(decimal value) => new JValue(value);
-        public static implicit operator JValue(string value) => new JValue(value);
-
-        #endregion
+        //
+        // #region Implicit Conversion
+        //
+        // public static implicit operator bool(JValue value) => value.ToBoolean();
+        // public static implicit operator byte(JValue value) => value.ToByte();
+        // public static implicit operator int(JValue value) => value.ToInt32();
+        // public static implicit operator int?(JValue value) => value.ToNullableInt32();
+        // public static implicit operator long(JValue value) => value.ToInt64();
+        // public static implicit operator float(JValue value) => value.ToSingle();
+        // public static implicit operator double(JValue value) => value.ToDouble();
+        // public static implicit operator decimal(JValue value) => value.ToDecimal();
+        // public static implicit operator string(JValue value) => value.ToUnescapedString();
+        //
+        // public static implicit operator JValue(bool value) => new JValue(value);
+        // public static implicit operator JValue(byte value) => new JValue(value);
+        // public static implicit operator JValue(int value) => new JValue(value);
+        // public static implicit operator JValue(long value) => new JValue(value);
+        // public static implicit operator JValue(float value) => new JValue(value);
+        // public static implicit operator JValue(double value) => new JValue(value);
+        // public static implicit operator JValue(decimal value) => new JValue(value);
+        // public static implicit operator JValue(string value) => new JValue(value);
+        //
+        // #endregion
 
 
         #region Operators
 
-        public static bool operator==(JValue left, JValue right) => left.Equals(right);
-        public static bool operator!=(JValue left, JValue right) => !left.Equals(right);
-        public static bool operator<(JValue left, JValue right) => left.CompareTo(right) < 0;
-        public static bool operator<=(JValue left, JValue right) => left.CompareTo(right) <= 0;
-        public static bool operator>(JValue left, JValue right) => left.CompareTo(right) > 0;
-        public static bool operator>=(JValue left, JValue right) => left.CompareTo(right) >= 0;
+        public static bool operator ==(JValue left, JValue right) => left.Equals(right);
+        public static bool operator !=(JValue left, JValue right) => !left.Equals(right);
+        public static bool operator <(JValue left, JValue right) => left.CompareTo(right) < 0;
+        public static bool operator <=(JValue left, JValue right) => left.CompareTo(right) <= 0;
+        public static bool operator >(JValue left, JValue right) => left.CompareTo(right) > 0;
+        public static bool operator >=(JValue left, JValue right) => left.CompareTo(right) >= 0;
 
         #endregion
     }

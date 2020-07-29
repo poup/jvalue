@@ -7,13 +7,12 @@ using System.Text;
 
 namespace Halak
 {
-    // TODO add Assert
     [PublicAPI]
-    public sealed partial class JsonWriter : IDisposable
+    public sealed partial class JsonWriter
     {
-        private TextWriter underlyingWriter;
+        private TextWriter m_underlyingWriter;
         private Formatter m_formatter = Formatter.compact;
-        private bool needComma;
+        private bool m_needComma;
 
         public JsonWriter(int capacity)
             : this(new StringBuilder(capacity))
@@ -27,7 +26,7 @@ namespace Halak
 
         public JsonWriter(TextWriter writer)
         {
-            this.underlyingWriter = writer;
+            this.m_underlyingWriter = writer;
         }
 
         public void SetFormatter(Formatter formatter)
@@ -35,82 +34,92 @@ namespace Halak
             m_formatter = formatter ?? Formatter.compact;
         }
 
-        public void Dispose()
-        {
-            underlyingWriter?.Dispose();
-            underlyingWriter = null;
-        }
-
         public void WritePropertyName(string key)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
             }
 
-            underlyingWriter.WriteEscapedString(key);
+            m_underlyingWriter.WriteEscapedString(key);
 
-            m_formatter.WritePropertySeparator(underlyingWriter);
-            needComma = false;
+            m_formatter.WritePropertySeparator(m_underlyingWriter);
+            m_needComma = false;
+        }
+
+        public void WritePropertyName(JValue key)
+        {
+            if (m_needComma)
+            {
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+            }
+
+            m_underlyingWriter.WriteSubString(key.source, key.startIndex, key.endIndex);
+
+            m_formatter.WritePropertySeparator(m_underlyingWriter);
+            m_needComma = false;
         }
 
 
         public void WriteStartArray()
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            m_formatter.WriteStartArrayToken(underlyingWriter);
+
+            m_formatter.WriteStartArrayToken(m_underlyingWriter);
         }
 
         public void WriteEndArray()
         {
-            m_formatter.WriteEndArrayToken(underlyingWriter);
-            needComma = true;
+            m_formatter.WriteEndArrayToken(m_underlyingWriter);
+            m_needComma = true;
         }
 
 
         public void WriteStartObject()
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            m_formatter.WriteStartObjectToken(underlyingWriter);
+
+            m_formatter.WriteStartObjectToken(m_underlyingWriter);
         }
 
         public void WriteEndObject()
         {
-            m_formatter.WriteEndObjectToken(underlyingWriter);
-            needComma = true;
+            m_formatter.WriteEndObjectToken(m_underlyingWriter);
+            m_needComma = true;
         }
 
 
         public void WriteNull()
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
 
-            underlyingWriter.Write(JValue.nullArray);
-            needComma = true;
+            m_underlyingWriter.Write(JValue.nullArray);
+            m_needComma = true;
         }
 
 
         public void WriteValue(bool value)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            underlyingWriter.Write(value ? JValue.trueArray : JValue.falseArray);
-            needComma = true;
+
+            m_underlyingWriter.Write(value ? JValue.trueArray : JValue.falseArray);
+            m_needComma = true;
         }
 
         public void WriteValue(bool? value)
@@ -127,13 +136,14 @@ namespace Halak
 
         public void WriteValue(char value)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            underlyingWriter.Write(value);
-            needComma = true;
+
+            m_underlyingWriter.Write(value);
+            m_needComma = true;
         }
 
         public void WriteValue(char? value)
@@ -150,13 +160,14 @@ namespace Halak
 
         public void WriteValue(byte value)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            underlyingWriter.Write(value);
-            needComma = true;
+
+            m_underlyingWriter.Write(value);
+            m_needComma = true;
         }
 
         public void WriteValue(byte? value)
@@ -173,13 +184,14 @@ namespace Halak
 
         public void WriteValue(int value)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            underlyingWriter.WriteInt32(value);
-            needComma = true;
+
+            m_underlyingWriter.WriteInt32(value);
+            m_needComma = true;
         }
 
         public void WriteValue(int? value)
@@ -196,13 +208,14 @@ namespace Halak
 
         public void WriteValue(long value)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            underlyingWriter.WriteInt64(value);
-            needComma = true;
+
+            m_underlyingWriter.WriteInt64(value);
+            m_needComma = true;
         }
 
         public void WriteValue(long? value)
@@ -219,13 +232,14 @@ namespace Halak
 
         public void WriteValue(float value)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
-            needComma = true;
+
+            m_underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
+            m_needComma = true;
         }
 
         public void WriteValue(float? value)
@@ -242,13 +256,14 @@ namespace Halak
 
         public void WriteValue(double value)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
-            needComma = true;
+
+            m_underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
+            m_needComma = true;
         }
 
         public void WriteValue(double? value)
@@ -265,13 +280,14 @@ namespace Halak
 
         public void WriteValue(decimal value)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
-            needComma = true;
+
+            m_underlyingWriter.Write(value.ToString(NumberFormatInfo.InvariantInfo));
+            m_needComma = true;
         }
 
         public void WriteValue(decimal? value)
@@ -288,35 +304,46 @@ namespace Halak
 
         public void WriteValue(string value)
         {
-            if (needComma)
+            if (value == null)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                WriteNull();
             }
-            underlyingWriter.WriteEscapedString(value);
-            needComma = true;
+            else
+            {
+                WriteValue(value, 0, value.Length);
+            }
+        }
+
+
+        public void WriteValue(string source, int startIndex, int length)
+        {
+            if (m_needComma)
+            {
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
+            }
+
+            m_underlyingWriter.WriteEscapedString(source, startIndex, length);
+            m_needComma = true;
         }
 
         public void WriteValue(JValue value)
         {
-            if (needComma)
+            if (m_needComma)
             {
-                m_formatter.WriteValueSeparator(underlyingWriter);
-                needComma = false;
+                m_formatter.WriteValueSeparator(m_underlyingWriter);
+                m_needComma = false;
             }
-            value.WriteTo(this);
-            needComma = true;
+
+            m_underlyingWriter.WriteSubString(value.source, value.startIndex, value.length);
+            m_needComma = true;
         }
 
 
         public JValue BuildJson()
         {
-            if (underlyingWriter is StringWriter stringWriter)
-            {
-                var stringBuilder = stringWriter.GetStringBuilder();
-                return new JValue(stringBuilder.ToString(), 0, stringBuilder.Length);
-            }
-            throw new InvalidOperationException();
+            var txt = m_underlyingWriter.ToString();
+            return new JValue(txt, 0, txt.Length);
         }
     }
 
@@ -329,6 +356,7 @@ namespace Halak
                 writer.Write('0');
                 return;
             }
+
             if (value < 0)
             {
                 if (value == int.MinValue)
@@ -363,25 +391,25 @@ namespace Halak
             goto E9;
 
             E9:
-            writer.Write((char)('0' + ((value / 1000000000) % 10)));
+            writer.Write((char) ('0' + ((value / 1000000000) % 10)));
             E8:
-            writer.Write((char)('0' + ((value / 100000000) % 10)));
+            writer.Write((char) ('0' + ((value / 100000000) % 10)));
             E7:
-            writer.Write((char)('0' + ((value / 10000000) % 10)));
+            writer.Write((char) ('0' + ((value / 10000000) % 10)));
             E6:
-            writer.Write((char)('0' + ((value / 1000000) % 10)));
+            writer.Write((char) ('0' + ((value / 1000000) % 10)));
             E5:
-            writer.Write((char)('0' + ((value / 100000) % 10)));
+            writer.Write((char) ('0' + ((value / 100000) % 10)));
             E4:
-            writer.Write((char)('0' + ((value / 10000) % 10)));
+            writer.Write((char) ('0' + ((value / 10000) % 10)));
             E3:
-            writer.Write((char)('0' + ((value / 1000) % 10)));
+            writer.Write((char) ('0' + ((value / 1000) % 10)));
             E2:
-            writer.Write((char)('0' + ((value / 100) % 10)));
+            writer.Write((char) ('0' + ((value / 100) % 10)));
             E1:
-            writer.Write((char)('0' + ((value / 10) % 10)));
+            writer.Write((char) ('0' + ((value / 10) % 10)));
             E0:
-            writer.Write((char)('0' + ((value / 1) % 10)));
+            writer.Write((char) ('0' + ((value / 1) % 10)));
         }
 
         public static void WriteInt64(this TextWriter writer, long value)
@@ -391,6 +419,7 @@ namespace Halak
                 writer.Write('0');
                 return;
             }
+
             if (value < 0)
             {
                 if (value == long.MinValue)
@@ -443,55 +472,62 @@ namespace Halak
             goto E18;
 
             E18:
-            writer.Write((char)('0' + ((value / 1000000000000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 1000000000000000000L) % 10)));
             E17:
-            writer.Write((char)('0' + ((value / 100000000000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 100000000000000000L) % 10)));
             E16:
-            writer.Write((char)('0' + ((value / 10000000000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 10000000000000000L) % 10)));
             E15:
-            writer.Write((char)('0' + ((value / 1000000000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 1000000000000000L) % 10)));
             E14:
-            writer.Write((char)('0' + ((value / 100000000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 100000000000000L) % 10)));
             E13:
-            writer.Write((char)('0' + ((value / 10000000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 10000000000000L) % 10)));
             E12:
-            writer.Write((char)('0' + ((value / 1000000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 1000000000000L) % 10)));
             E11:
-            writer.Write((char)('0' + ((value / 100000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 100000000000L) % 10)));
             E10:
-            writer.Write((char)('0' + ((value / 10000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 10000000000L) % 10)));
             E9:
-            writer.Write((char)('0' + ((value / 1000000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 1000000000L) % 10)));
             E8:
-            writer.Write((char)('0' + ((value / 100000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 100000000L) % 10)));
             E7:
-            writer.Write((char)('0' + ((value / 10000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 10000000L) % 10)));
             E6:
-            writer.Write((char)('0' + ((value / 1000000L) % 10)));
+            writer.Write((char) ('0' + ((value / 1000000L) % 10)));
             E5:
-            writer.Write((char)('0' + ((value / 100000L) % 10)));
+            writer.Write((char) ('0' + ((value / 100000L) % 10)));
             E4:
-            writer.Write((char)('0' + ((value / 10000L) % 10)));
+            writer.Write((char) ('0' + ((value / 10000L) % 10)));
             E3:
-            writer.Write((char)('0' + ((value / 1000L) % 10)));
+            writer.Write((char) ('0' + ((value / 1000L) % 10)));
             E2:
-            writer.Write((char)('0' + ((value / 100L) % 10)));
+            writer.Write((char) ('0' + ((value / 100L) % 10)));
             E1:
-            writer.Write((char)('0' + ((value / 10L) % 10)));
+            writer.Write((char) ('0' + ((value / 10L) % 10)));
             E0:
-            writer.Write((char)('0' + ((value / 1L) % 10)));
+            writer.Write((char) ('0' + ((value / 1L) % 10)));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteEscapedString(this TextWriter writer, string value)
+        {
+            writer.WriteEscapedString(value, 0, value.Length);
+        }
+
+        public static void WriteEscapedString(this TextWriter writer, string value, int startIndex, int length)
         {
             if (value == null)
             {
                 writer.Write(JValue.nullArray);
                 return;
             }
+
             writer.Write('"');
 
-            for (var i = 0; i < value.Length; i++)
+            for (int i = startIndex, end = startIndex + length; i < end; i++)
             {
                 var c = value[i];
 
@@ -534,11 +570,21 @@ namespace Halak
                         {
                             WriteHexChar(writer, c);
                         }
+
                         break;
                 }
             }
 
             writer.Write('"');
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteSubString(this TextWriter writer, string value, int startIndex, int length)
+        {
+            for (int i = startIndex, end = startIndex + length; i < end; ++i)
+            {
+                writer.Write(value[i]);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
